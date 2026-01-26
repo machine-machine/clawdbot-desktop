@@ -57,7 +57,10 @@ VOLUME ["${CLAWDBOT_HOME}", "${WORKSPACE}"]
 USER root
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY scripts/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY scripts/xstartup /home/developer/.vnc/xstartup
+RUN chmod +x /usr/local/bin/entrypoint.sh && \
+    chmod +x /home/developer/.vnc/xstartup && \
+    chown -R developer:developer /home/developer/.vnc
 
 # Expose internal ports (no direct host bind – Coolify/reverse proxy will route)
 EXPOSE 18789 6080
