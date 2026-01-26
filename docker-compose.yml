@@ -35,17 +35,15 @@ services:
     labels:
       - "traefik.enable=true"
 
-      # noVNC Router (path-based: /vnc/)
-      - "traefik.http.routers.novnc.rule=Host(`${DOMAIN:-clawd.machinemachine.ai}`) && PathPrefix(`/vnc`)"
+      # noVNC Router
+      - "traefik.http.routers.novnc.rule=Host(`${DOMAIN:-clawd.machinemachine.ai}`)"
       - "traefik.http.routers.novnc.entrypoints=https"
       - "traefik.http.routers.novnc.tls=true"
       - "traefik.http.routers.novnc.tls.certresolver=letsencrypt"
       - "traefik.http.routers.novnc.service=novnc"
       - "traefik.http.services.novnc.loadbalancer.server.port=6080"
-      - "traefik.http.middlewares.novnc-stripprefix.stripprefix.prefixes=/vnc"
-      - "traefik.http.routers.novnc.middlewares=novnc-stripprefix"
 
-      # Clawdbot Gateway Router (root path)
+      # Clawdbot Gateway Router
       - "traefik.http.routers.gateway.rule=Host(`${DOMAIN:-clawd.machinemachine.ai}`)"
       - "traefik.http.routers.gateway.entrypoints=https"
       - "traefik.http.routers.gateway.tls=true"
