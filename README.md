@@ -64,11 +64,15 @@ docker compose build
 docker compose up -d
 ```
 
-### Coolify Deployment
+### Coolify Deployment with Traefik
+
+The docker-compose.yml includes Traefik labels for automatic routing. Configure two subdomains:
 
 1. Connect the GitHub repository in Coolify
 2. Select **Docker Compose** build pack
 3. Configure environment variables:
+   - `VNC_DOMAIN` - Domain for noVNC (e.g., `vnc.yourdomain.com`)
+   - `GATEWAY_DOMAIN` - Domain for Clawdbot Gateway (e.g., `gateway.yourdomain.com`)
    - `VNC_PASSWORD` - VNC connection password (default: `clawdbot`)
    - `ANTHROPIC_API_KEY` - Your Anthropic API key
    - `OPENAI_API_KEY` - Your OpenAI API key (optional)
@@ -77,12 +81,18 @@ docker compose up -d
    - `clawdbot_workspace` - Workspace data
 5. Deploy
 
-Coolify will handle HTTPS and reverse proxy routing to the exposed ports.
+Access after deployment:
+- **noVNC Desktop**: `https://vnc.yourdomain.com/vnc.html`
+- **Clawdbot Gateway**: `wss://gateway.yourdomain.com`
+
+Both services support WebSocket connections through Traefik.
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `VNC_DOMAIN` | `vnc.localhost` | Domain for noVNC (Traefik routing) |
+| `GATEWAY_DOMAIN` | `gateway.localhost` | Domain for Clawdbot Gateway (Traefik routing) |
 | `VNC_PASSWORD` | `clawdbot` | VNC connection password |
 | `CLAWDBOT_HOME` | `/clawdbot_home` | Clawdbot data directory |
 | `WORKSPACE` | `/workspace` | Workspace directory |
