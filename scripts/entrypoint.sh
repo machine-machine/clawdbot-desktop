@@ -2,7 +2,7 @@
 set -e
 
 # Default VNC password if not set
-VNC_PASSWORD="${VNC_PASSWORD:-clawdbot}"
+VNC_PASSWORD="${VNC_PASSWORD:-moltbot}"
 
 # Ensure runtime dirs
 mkdir -p /run/user/1000
@@ -18,5 +18,5 @@ chown ${USER}:${USER} /home/${USER}/.vnc/passwd
 # - GNOME session on :1
 # - TigerVNC on :1
 # - noVNC/websockify on 6080
-# - Clawdbot gateway
+# - Moltbot gateway
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf

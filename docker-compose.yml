@@ -1,12 +1,12 @@
 services:
-  clawdbot-desktop-worker:
+  moltbot-desktop-worker:
     build: .
-    container_name: clawdbot-desktop-worker
+    container_name: moltbot-desktop-worker
     restart: unless-stopped
     environment:
-      CLAWDBOT_HOME: /clawdbot_home
+      MOLTBOT_HOME: /moltbot_home
       WORKSPACE: /workspace
-      VNC_PASSWORD: ${VNC_PASSWORD:-clawdbot}
+      VNC_PASSWORD: ${VNC_PASSWORD:-moltbot}
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility,video
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -22,8 +22,8 @@ services:
       - "6080"
       - "18789"
     volumes:
-      - clawdbot_home:/clawdbot_home
-      - clawdbot_workspace:/workspace
+      - moltbot_home:/moltbot_home
+      - moltbot_workspace:/workspace
       # Optional: Docker socket for sandboxes
       # - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
@@ -36,5 +36,5 @@ services:
       - traefik.enable=true
 
 volumes:
-  clawdbot_home:
-  clawdbot_workspace:
+  moltbot_home:
+  moltbot_workspace:

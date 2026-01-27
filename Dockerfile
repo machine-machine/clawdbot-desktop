@@ -1,4 +1,4 @@
-# VNC + noVNC + Clawdbot desktop worker (Pretty XFCE4 with macOS styling)
+# VNC + noVNC + Moltbot desktop worker (Pretty XFCE4 with macOS styling)
 FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     USER=developer \
     VNC_PASSWORD=clawdbot \
     DISPLAY=:1 \
-    CLAWDBOT_HOME=/clawdbot_home \
+    MOLTBOT_HOME=/moltbot_home \
     WORKSPACE=/workspace
 
 # Base packages + XFCE4 desktop environment + theme build dependencies
@@ -43,7 +43,7 @@ RUN apt-get update && \
       supervisor \
       htop \
       nano \
-      # Browser for Claude Max / Clawdbot browser auth
+      # Browser for Claude Max / Moltbot browser auth
       chromium-browser \
       fonts-liberation fonts-dejavu-core fonts-noto-color-emoji \
       libnss3 libxss1 libasound2 \
@@ -85,16 +85,16 @@ RUN mkdir -p ~/.local/share/backgrounds && \
     curl -sL "https://raw.githubusercontent.com/vinceliuice/WhiteSur-wallpapers/main/4k/WhiteSur-dark.png" \
     -o ~/.local/share/backgrounds/wallpaper.png || true
 
-# Install Node 22 (via NodeSource) and Clawdbot
+# Install Node 22 (via NodeSource) and Moltbot
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && \
     sudo apt-get update && \
     sudo apt-get install -y nodejs && \
     sudo rm -rf /var/lib/apt/lists/* && \
-    sudo npm install -g clawdbot@latest
+    curl -fsSL https://molt.bot/install.sh | bash
 
 # Prepare directories
-RUN sudo mkdir -p ${CLAWDBOT_HOME} ${WORKSPACE} && \
-    sudo chown -R ${USER}:${USER} ${CLAWDBOT_HOME} ${WORKSPACE}
+RUN sudo mkdir -p ${MOLTBOT_HOME} ${WORKSPACE} && \
+    sudo chown -R ${USER}:${USER} ${MOLTBOT_HOME} ${WORKSPACE}
 
 # Configure XFCE4 for VNC (disable compositing, set theme)
 RUN mkdir -p /home/${USER}/.config/xfce4/xfconf/xfce-perchannel-xml && \
@@ -102,7 +102,7 @@ RUN mkdir -p /home/${USER}/.config/xfce4/xfconf/xfce-perchannel-xml && \
     mkdir -p /home/${USER}/.config/plank/dock1/launchers && \
     mkdir -p /home/${USER}/Desktop
 
-VOLUME ["${CLAWDBOT_HOME}", "${WORKSPACE}"]
+VOLUME ["${MOLTBOT_HOME}", "${WORKSPACE}"]
 
 # Copy configs
 USER root
