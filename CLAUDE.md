@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`clawdbot-desktop` is a GPU-enabled Dockerized GNOME desktop that runs Clawdbot Gateway and exposes a web-based VNC (noVNC) session and Clawdbot UI via Coolify and an external reverse proxy. It provides a persistent "AI worker PC" with a full Linux GNOME desktop inside a container, remotely accessible from any browser.
+`clawdbot-desktop` is a GPU-enabled Dockerized XFCE4 desktop that runs Clawdbot Gateway and exposes a web-based VNC (noVNC) session and Clawdbot UI via Coolify and an external reverse proxy. It provides a persistent "AI worker PC" with a full Linux XFCE4 desktop inside a container, remotely accessible from any browser.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │  Docker Container (clawdbot-desktop-worker) │
 │                                             │
 │  Supervisord (Process Manager)              │
-│  ├── VNC Server (:1 + gnome-terminal)       │
+│  ├── VNC Server (:1 + XFCE4 session)        │
 │  ├── noVNC/websockify (0.0.0.0:6080)        │
 │  └── Clawdbot Gateway (0.0.0.0:18789)       │
 │                                             │
@@ -29,18 +29,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Key Technology Stack:**
 - Base Image: `nvidia/cuda:12.4.1-runtime-ubuntu22.04`
-- Desktop: GNOME with TigerVNC and noVNC (HTML5 VNC client)
+- Desktop: XFCE4 with TigerVNC and noVNC (HTML5 VNC client)
 - Runtime: Docker + Docker Compose deployed via Coolify
-- Process Manager: Supervisord (manages GNOME, VNC, noVNC, Clawdbot)
+- Process Manager: Supervisord (manages XFCE4, VNC, noVNC, Clawdbot)
 - AI Agent: Clawdbot Gateway (Node.js 22.x)
 
 ## Repository Layout
 
-- `Dockerfile` - Builds GNOME + VNC + noVNC + Clawdbot image
+- `Dockerfile` - Builds XFCE4 + VNC + noVNC + Clawdbot image
 - `docker-compose.yml` - Production stack for Coolify (no host ports, GPU reservations, volumes)
 - `docker-compose.local.yml` - Local development (no GPU, with port mappings)
 - `scripts/entrypoint.sh` - Bootstraps supervisord and environment
-- `scripts/supervisord.conf` - Defines Xvnc, GNOME, noVNC, Clawdbot processes
+- `scripts/supervisord.conf` - Defines Xvnc, XFCE4, noVNC, Clawdbot processes
+- `scripts/xstartup` - VNC xstartup script that launches XFCE4 session
+- `config/xfce4/` - XFCE4 configuration files (compositing disabled for VNC)
+- `config/desktop/` - Desktop shortcut files (Terminal, Chromium, Workspace)
 - `config/clawdbot.config.sample.json` - Optional sandbox and workspace defaults
 - `docs/prd.md` - Product requirements document
 
@@ -90,10 +93,16 @@ Single domain with path-based routing via Traefik:
 ## Supervisord Process Priority
 
 Processes start in this order (lower number = higher priority):
-1. `vncserver` (priority 10) - VNC server on :1, launches xstartup (gnome-terminal)
-2. `novnc` (priority 30) - websockify on 6080 (sleeps 3s)
-3. `clawdbot-gateway` (priority 40) - Clawdbot Gateway on 18789 (sleeps 5s)
+1. `vncserver` (priority 10) - VNC server on :1, launches xstartup (XFCE4 session)
+2. `novnc` (priority 30) - websockify on 6080 (sleeps 5s)
+3. `clawdbot-gateway` (priority 40) - Clawdbot Gateway on 18789 (sleeps 8s)
 
 All processes are configured with `autorestart=true`.
 
-Note: Full GNOME shell is not used (causes SIGTRAP in headless Docker). Instead, VNC xstartup launches gnome-terminal for a lightweight desktop.
+## XFCE4 Configuration
+
+XFCE4 is configured for optimal VNC performance:
+- Compositing is disabled (critical for VNC performance)
+- Dark grey solid background (reduces bandwidth)
+- Desktop shortcuts for Terminal, Chromium, and Workspace folder
+- Thunar file manager, xfce4-terminal, mousepad text editor included

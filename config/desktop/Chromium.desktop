@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Chromium Browser
+Comment=Claude Max Browser Auth
+Exec=chromium-browser --no-sandbox --disable-gpu
+Icon=chromium-browser
+Terminal=false
+Categories=Network;WebBrowser;

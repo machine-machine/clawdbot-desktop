@@ -1,13 +1,17 @@
 #!/bin/bash
-# VNC xstartup script - minimal X session for headless Docker
 
+# Clean up any stale X locks
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+
+# Set display
 export DISPLAY=:1
 
-# Set grey background
-xsetroot -solid grey 2>/dev/null || true
+# Start D-Bus session bus
+eval $(dbus-launch --sh-syntax)
 
-# Start xterm as the main terminal (more reliable than gnome-terminal in headless)
-/usr/bin/x-terminal-emulator -e /bin/bash &
+# Disable XFCE compositor (critical for VNC performance)
+xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null || true
 
-# Keep the session alive
-tail -f /dev/null
+# Start XFCE4 session
+exec startxfce4

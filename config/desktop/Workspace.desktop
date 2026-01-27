@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Workspace
+Comment=Open Workspace Folder
+Exec=thunar /workspace
+Icon=folder
+Terminal=false
+Categories=Utility;FileManager;

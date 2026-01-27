@@ -1,13 +1,14 @@
 # clawdbot-desktop
 
-GPU-enabled Dockerized GNOME desktop that runs Clawdbot Gateway and exposes a web-based VNC (noVNC) session and Clawdbot UI via Coolify and an external reverse proxy.
+GPU-enabled Dockerized XFCE4 desktop that runs Clawdbot Gateway and exposes a web-based VNC (noVNC) session and Clawdbot UI via Coolify and an external reverse proxy.
 
 ## Features
 
-- **Persistent AI Worker PC** - Full Linux GNOME desktop inside a container, remotely accessible from any browser
+- **Persistent AI Worker PC** - Full Linux XFCE4 desktop inside a container, remotely accessible from any browser
 - **Clawdbot Gateway** - Installed and running as a daemon with persistent configuration
 - **GPU Access** - NVIDIA Container Toolkit support for ML/AI workloads
 - **Web-based VNC** - Access the desktop via noVNC (HTML5) - no client installation required
+- **Lightweight Desktop** - XFCE4 uses ~300MB RAM, optimized for VNC (compositing disabled)
 
 ## Architecture
 
@@ -18,7 +19,7 @@ GPU-enabled Dockerized GNOME desktop that runs Clawdbot Gateway and exposes a we
 │  Docker Container (clawdbot-desktop-worker) │
 │                                             │
 │  Supervisord (Process Manager)              │
-│  ├── GNOME Session (:1 display)             │
+│  ├── XFCE4 Session (:1 display)             │
 │  ├── TigerVNC Server (localhost:5901)       │
 │  ├── noVNC/websockify (0.0.0.0:6080)        │
 │  └── Clawdbot Daemon (0.0.0.0:18789)        │
@@ -159,22 +160,26 @@ docker compose exec clawdbot-desktop-worker clawdbot onboard
 If you have a Claude Max subscription, you can use browser-based auth instead of API keys:
 
 1. Connect to the VNC desktop (`https://vnc.yourdomain.com/vnc.html`)
-2. Open a terminal in the GNOME desktop
+2. Open a terminal in the XFCE4 desktop (Terminal shortcut on desktop)
 3. Run `clawdbot browser` to launch the managed Chromium browser
 4. Log into `claude.ai` with your Claude Max account
 5. Clawdbot will use your browser session for Claude interactions
 
 This avoids API costs entirely - you use your unlimited Claude Max subscription.
 
-## Known Limitations
+## Desktop Environment
 
-- **GNOME on non-GPU hosts**: The GNOME desktop may not start properly on hosts without proper GPU/display support. On such hosts, the VNC server will still be accessible but may show a blank screen. This works correctly on Linux hosts with NVIDIA GPUs.
-- **ARM architecture**: Tested on both ARM64 (Apple Silicon) and x86_64 (Threadripper). Some GNOME features may behave differently between architectures.
+XFCE4 is used for its lightweight footprint and VNC compatibility:
+
+- **Memory usage**: ~300MB (vs ~1.5GB for GNOME)
+- **Compositing**: Disabled for optimal VNC performance
+- **Included apps**: xfce4-terminal, Thunar file manager, mousepad text editor, Chromium browser
+- **Desktop shortcuts**: Terminal, Chromium Browser, Workspace folder
 
 ## Resource Requirements
 
 - **CPU**: 4+ vCPU recommended
-- **RAM**: 8-16 GB recommended
+- **RAM**: 4-8 GB recommended (XFCE4 uses ~300MB)
 - **GPU**: NVIDIA GPU(s) - configured to use all available GPUs
 - **Storage**: Sufficient for volumes
 
