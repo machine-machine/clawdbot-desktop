@@ -34,6 +34,8 @@ RUN apt-get update && \
       libglib2.0-dev \
       libglib2.0-dev-bin \
       libxml2-utils \
+      gtk2-engines-murrine \
+      gtk2-engines-pixbuf \
       # Core utilities
       curl ca-certificates wget \
       git \
