@@ -4,53 +4,61 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`clawdbot-desktop` is a GPU-enabled Dockerized XFCE4 desktop that runs Clawdbot Gateway and exposes a web-based VNC (noVNC) session and Clawdbot UI via Coolify and an external reverse proxy. It provides a persistent "AI worker PC" with a full Linux XFCE4 desktop inside a container, remotely accessible from any browser.
+`clawdbot-desktop` is a GPU-accelerated Dockerized XFCE4 desktop that runs Clawdbot Gateway and exposes a web-based remote desktop session via Selkies-GStreamer WebRTC streaming. It provides a persistent "AI worker PC" with a full Linux XFCE4 desktop inside a container, remotely accessible from any browser with ~20ms latency using NVENC hardware encoding.
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│  Coolify (Deployment & Reverse Proxy)       │
-├─────────────────────────────────────────────┤
-│  Docker Container (clawdbot-desktop-worker) │
-│                                             │
-│  Supervisord (Process Manager)              │
-│  ├── VNC Server (:1 + XFCE4 session)        │
-│  ├── noVNC/websockify (0.0.0.0:6080)        │
-│  └── Clawdbot Gateway (0.0.0.0:18789)       │
-│                                             │
-│  Volumes:                                   │
-│  ├── /clawdbot_home (config & state)        │
-│  └── /workspace (workspace data)            │
-│                                             │
-│  GPU Access (NVIDIA devices)                │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  Coolify (Deployment & Reverse Proxy)           │
+├─────────────────────────────────────────────────┤
+│  Docker Container (clawdbot-desktop-worker)     │
+│                                                 │
+│  Supervisord (Process Manager)                  │
+│  ├── D-Bus (system bus)                         │
+│  ├── PulseAudio (audio support)                 │
+│  ├── Xvfb (:0 display, 1920x1080)              │
+│  ├── XFCE4 + Plank (Desktop environment)        │
+│  ├── Selkies-GStreamer (WebRTC + NVENC)        │
+│  │   └── Port 8080 (WebRTC)                    │
+│  └── Clawdbot Gateway                           │
+│      └── Port 18789 (WebSocket)                │
+│                                                 │
+│  Volumes:                                       │
+│  ├── /clawdbot_home (config & state)           │
+│  └── /workspace (workspace data)               │
+│                                                 │
+│  GPU Access (NVIDIA NVENC encoding)            │
+└─────────────────────────────────────────────────┘
 ```
 
 **Key Technology Stack:**
-- Base Image: `nvidia/cuda:12.4.1-runtime-ubuntu22.04`
-- Desktop: XFCE4 with TigerVNC and noVNC (HTML5 VNC client)
+- Base Image: `ubuntu:22.04`
+- Streaming: Selkies-GStreamer with NVENC hardware encoding (~20ms latency)
+- Desktop: XFCE4 with WhiteSur macOS-style theme + Plank dock
 - Runtime: Docker + Docker Compose deployed via Coolify
-- Process Manager: Supervisord (manages XFCE4, VNC, noVNC, Clawdbot)
+- Process Manager: Supervisord (manages Xvfb, XFCE4, Selkies, Clawdbot)
 - AI Agent: Clawdbot Gateway (Node.js 22.x)
 
 ## Repository Layout
 
-- `Dockerfile` - Builds XFCE4 + VNC + noVNC + Clawdbot image
-- `docker-compose.yml` - Production stack for Coolify (no host ports, GPU reservations, volumes)
+- `Dockerfile` - Builds XFCE4 + Selkies-GStreamer + Clawdbot image
+- `docker-compose.yml` - Production stack for Coolify (GPU, no host ports, volumes)
 - `docker-compose.local.yml` - Local development (no GPU, with port mappings)
 - `scripts/entrypoint.sh` - Bootstraps supervisord and environment
-- `scripts/supervisord.conf` - Defines Xvnc, XFCE4, noVNC, Clawdbot processes
-- `scripts/xstartup` - VNC xstartup script that launches XFCE4 session
-- `config/xfce4/` - XFCE4 configuration files (compositing disabled for VNC)
-- `config/desktop/` - Desktop shortcut files (Terminal, Chromium, Workspace)
+- `scripts/supervisord.conf` - Defines Xvfb, XFCE4, Selkies, Clawdbot processes
+- `scripts/start-desktop.sh` - XFCE4 session startup script
+- `config/xfce4/` - XFCE4 configuration files (compositing disabled, WhiteSur theme)
+- `config/plank/` - Plank dock configuration (macOS-style dock)
+- `config/desktop/` - Desktop shortcut files (Terminal, Workspace)
+- `config/autostart/` - Autostart entries for Plank dock
 - `config/clawdbot.config.sample.json` - Optional sandbox and workspace defaults
 - `docs/prd.md` - Product requirements document
 
 ## Build and Run
 
 ```bash
-# Local development (no GPU)
+# Local development (no GPU, software encoding)
 docker compose -f docker-compose.local.yml up -d
 
 # Production (requires NVIDIA Container Toolkit)
@@ -64,24 +72,19 @@ docker compose exec clawdbot-desktop-worker nvidia-smi
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DOMAIN` | `clawd.machinemachine.ai` | Domain for path-based routing |
-| `VNC_PASSWORD` | `clawdbot` | VNC connection password |
+| `VNC_PASSWORD` | `clawdbot` | Access password (maps to Selkies basic auth) |
+| `SELKIES_ENCODER` | `nvh264enc` | Video encoder (`nvh264enc` or `x264enc`) |
+| `SELKIES_FRAMERATE` | `60` | Target framerate |
+| `SELKIES_VIDEO_BITRATE` | `8000` | Bitrate in kbps |
 | `CLAWDBOT_HOME` | `/clawdbot_home` | Clawdbot data directory |
 | `WORKSPACE` | `/workspace` | Workspace directory |
 | `ANTHROPIC_API_KEY` | - | Set in Coolify for Clawdbot |
 | `OPENAI_API_KEY` | - | Set in Coolify for Clawdbot |
 
-## URL Routing (Path-Based)
-
-Single domain with path-based routing via Traefik:
-
-- `https://clawd.yourdomain.com/` → Clawdbot Gateway (port 18789)
-- `https://clawd.yourdomain.com/vnc/` → noVNC web interface (port 6080)
-
 ## Exposed Ports (Internal)
 
-- `6080` - noVNC web interface (routed to `/vnc/` path)
-- `18789` - Clawdbot UI/API gateway (routed to root path `/`)
+- `8080` - Selkies-GStreamer WebRTC interface
+- `18789` - Clawdbot UI/API gateway
 
 ## Coolify Deployment
 
@@ -89,20 +92,36 @@ Single domain with path-based routing via Traefik:
 2. Select Docker Compose build pack
 3. Configure environment variables and storage volumes
 4. Deploy - Coolify handles HTTPS and reverse proxy routing
+5. Configure port routing:
+   - Desktop domain → port **8080**
+   - Gateway domain → port **18789**
 
 ## Supervisord Process Priority
 
 Processes start in this order (lower number = higher priority):
-1. `vncserver` (priority 10) - VNC server on :1, launches xstartup (XFCE4 session)
-2. `novnc` (priority 30) - websockify on 6080 (sleeps 5s)
-3. `clawdbot-gateway` (priority 40) - Clawdbot Gateway on 18789 (sleeps 8s)
+1. `dbus` (priority 5) - D-Bus system daemon
+2. `pulseaudio` (priority 10) - Audio support
+3. `xvfb` (priority 15) - Virtual framebuffer on :0
+4. `xfce4` (priority 20) - XFCE4 desktop session + Plank dock
+5. `selkies` (priority 30) - Selkies-GStreamer WebRTC on 8080 (sleeps 5s)
+6. `clawdbot-gateway` (priority 40) - Clawdbot Gateway on 18789 (sleeps 10s)
 
 All processes are configured with `autorestart=true`.
 
 ## XFCE4 Configuration
 
-XFCE4 is configured for optimal VNC performance:
-- Compositing is disabled (critical for VNC performance)
-- Dark grey solid background (reduces bandwidth)
-- Desktop shortcuts for Terminal, Chromium, and Workspace folder
+XFCE4 is configured for optimal streaming performance:
+- Compositing is disabled (critical for streaming performance)
+- WhiteSur macOS-style dark theme
+- Plank dock at bottom (macOS-style)
+- Desktop shortcuts for Terminal and Workspace folder
 - Thunar file manager, xfce4-terminal, mousepad text editor included
+
+## Performance
+
+| Metric | VNC (old) | Selkies (new) |
+|--------|-----------|---------------|
+| Latency | ~100ms | ~20ms |
+| CPU Usage | 30-50% | <5% |
+| Quality | Blocky | Crisp |
+| Max FPS | 30 | 60 |

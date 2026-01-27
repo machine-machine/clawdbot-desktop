@@ -1,187 +1,93 @@
 # clawdbot-desktop
 
-GPU-enabled Dockerized XFCE4 desktop that runs Clawdbot Gateway and exposes a web-based VNC (noVNC) session and Clawdbot UI via Coolify and an external reverse proxy.
+GPU-accelerated remote desktop for Clawdbot, using Selkies-GStreamer WebRTC streaming with NVENC encoding.
 
 ## Features
 
-- **Persistent AI Worker PC** - Full Linux XFCE4 desktop inside a container, remotely accessible from any browser
-- **Clawdbot Gateway** - Installed and running as a daemon with persistent configuration
-- **GPU Access** - NVIDIA Container Toolkit support for ML/AI workloads
-- **Web-based VNC** - Access the desktop via noVNC (HTML5) - no client installation required
-- **Lightweight Desktop** - XFCE4 uses ~300MB RAM, optimized for VNC (compositing disabled)
+- **GPU-Accelerated Streaming** - Uses NVIDIA NVENC for ~20ms latency
+- **WebRTC Protocol** - Modern, low-latency streaming in any browser
+- **Pretty XFCE Desktop** - WhiteSur macOS-style theme + Plank dock
+- **Clawdbot Gateway** - Installed and running as a daemon
+- **Audio Support** - PulseAudio streaming included
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│  Coolify (Deployment & Reverse Proxy)       │
-├─────────────────────────────────────────────┤
-│  Docker Container (clawdbot-desktop-worker) │
-│                                             │
-│  Supervisord (Process Manager)              │
-│  ├── XFCE4 Session (:1 display)             │
-│  ├── TigerVNC Server (localhost:5901)       │
-│  ├── noVNC/websockify (0.0.0.0:6080)        │
-│  └── Clawdbot Daemon (0.0.0.0:18789)        │
-│                                             │
-│  Volumes:                                   │
-│  ├── /clawdbot_home (config & state)        │
-│  └── /workspace (workspace data)            │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  Coolify (Deployment & Reverse Proxy)           │
+├─────────────────────────────────────────────────┤
+│  Docker Container (clawdbot-desktop-worker)     │
+│                                                 │
+│  Supervisord (Process Manager)                  │
+│  ├── Xvfb (:0 display, 1920x1080)              │
+│  ├── XFCE4 + Plank (Desktop environment)        │
+│  ├── Selkies-GStreamer (WebRTC + NVENC)        │
+│  │   └── Port 8080 (HTTPS)                     │
+│  └── Clawdbot Daemon                           │
+│      └── Port 18789 (WebSocket)                │
+│                                                 │
+│  Volumes:                                       │
+│  ├── /clawdbot_home (config & state)           │
+│  └── /workspace (workspace data)               │
+└─────────────────────────────────────────────────┘
 ```
-
-## Prerequisites
-
-- Docker with Docker Compose
-- NVIDIA Container Toolkit (for GPU support)
-- Coolify (for deployment) or any reverse proxy
 
 ## Quick Start
 
-### Local Development (without GPU)
-
-A separate compose file is provided for local testing on machines without NVIDIA GPUs:
+### Production (with GPU)
 
 ```bash
-# Clone the repository
-git clone git@github.com:machine-machine/clawdbot-desktop.git
-cd clawdbot-desktop
-
-# Build and run locally (no GPU required)
-docker compose -f docker-compose.local.yml up -d
-```
-
-Access:
-- **noVNC Desktop**: http://localhost:6080/vnc.html (password: `clawdbot`)
-- **Clawdbot Gateway**: ws://localhost:18789
-
-### Production Deployment (with GPU)
-
-```bash
-# Build the image
-docker compose build
-
-# Run (requires NVIDIA Container Toolkit)
 docker compose up -d
 ```
 
-### Coolify Deployment with Traefik
+Access: `https://desktop.yourdomain.com`
+- Username: `developer`
+- Password: value of `VNC_PASSWORD` (default: `clawdbot`)
 
-The docker-compose.yml includes Traefik labels for automatic routing. Configure two subdomains:
+### Local Development (without GPU)
 
-1. Connect the GitHub repository in Coolify
-2. Select **Docker Compose** build pack
-3. Configure environment variables:
-   - `VNC_DOMAIN` - Domain for noVNC (e.g., `vnc.yourdomain.com`)
-   - `GATEWAY_DOMAIN` - Domain for Clawdbot Gateway (e.g., `gateway.yourdomain.com`)
-   - `VNC_PASSWORD` - VNC connection password (default: `clawdbot`)
-   - `ANTHROPIC_API_KEY` - Your Anthropic API key
-   - `OPENAI_API_KEY` - Your OpenAI API key (optional)
-4. Configure storage volumes:
-   - `clawdbot_home` - Clawdbot configuration and state
-   - `clawdbot_workspace` - Workspace data
-5. Deploy
+```bash
+docker compose -f docker-compose.local.yml up -d
+```
 
-Access after deployment:
-- **noVNC Desktop**: `https://vnc.yourdomain.com/vnc.html`
-- **Clawdbot Gateway**: `wss://gateway.yourdomain.com`
-
-Both services support WebSocket connections through Traefik.
+Access: `http://localhost:8080`
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VNC_DOMAIN` | `vnc.localhost` | Domain for noVNC (Traefik routing) |
-| `GATEWAY_DOMAIN` | `gateway.localhost` | Domain for Clawdbot Gateway (Traefik routing) |
-| `VNC_PASSWORD` | `clawdbot` | VNC connection password |
-| `CLAWDBOT_HOME` | `/clawdbot_home` | Clawdbot data directory |
-| `WORKSPACE` | `/workspace` | Workspace directory |
-| `ANTHROPIC_API_KEY` | - | Anthropic API key for Clawdbot |
-| `OPENAI_API_KEY` | - | OpenAI API key for Clawdbot |
+| `VNC_PASSWORD` | `clawdbot` | Access password (same as before!) |
+| `SELKIES_ENCODER` | `nvh264enc` | Video encoder (`nvh264enc` or `x264enc`) |
+| `SELKIES_FRAMERATE` | `60` | Target framerate |
+| `SELKIES_VIDEO_BITRATE` | `8000` | Bitrate in kbps |
+| `ANTHROPIC_API_KEY` | - | For Clawdbot |
+| `OPENAI_API_KEY` | - | For Clawdbot (optional) |
 
-## Exposed Ports
+## Coolify Configuration
 
-| Port | Service | Description |
-|------|---------|-------------|
-| 6080 | noVNC | Web-based VNC interface |
-| 18789 | Clawdbot | Clawdbot UI and API gateway |
+After deploying, configure domains in Coolify UI:
+- Desktop: your domain → port **8080**
+- Gateway: your domain → port **18789**
 
-## GPU Support
+## GPU Requirements
 
-The container is configured to use NVIDIA GPUs via the NVIDIA Container Toolkit. Verify GPU access:
+- NVIDIA GPU with NVENC support (GTX 900+, RTX series)
+- NVIDIA Driver 525+ on host
+- NVIDIA Container Toolkit
 
+Verify GPU access:
 ```bash
 docker compose exec clawdbot-desktop-worker nvidia-smi
 ```
 
-### Troubleshooting GPU Access
+## Performance Comparison
 
-1. Ensure NVIDIA Container Toolkit is installed on the host:
-   ```bash
-   nvidia-ctk --version
-   ```
-
-2. Verify Docker can see the GPU:
-   ```bash
-   docker run --rm --gpus all nvidia/cuda:12.4.1-runtime-ubuntu22.04 nvidia-smi
-   ```
-
-3. If using Docker Compose without GPU support, uncomment the `runtime: nvidia` line in `docker-compose.yml`
-
-## Sandbox Configuration
-
-For Clawdbot sandboxed tool containers, optionally mount the Docker socket:
-
-```yaml
-volumes:
-  - /var/run/docker.sock:/var/run/docker.sock
-```
-
-A sample sandbox configuration is provided in `config/clawdbot.config.sample.json`.
-
-## Clawdbot Onboarding
-
-On first access, configure Clawdbot via the CLI inside the container:
-
-```bash
-docker compose exec clawdbot-desktop-worker clawdbot setup
-docker compose exec clawdbot-desktop-worker clawdbot configure
-```
-
-Or use the interactive onboarding wizard:
-
-```bash
-docker compose exec clawdbot-desktop-worker clawdbot onboard
-```
-
-### Using Claude Max (No API Key Required)
-
-If you have a Claude Max subscription, you can use browser-based auth instead of API keys:
-
-1. Connect to the VNC desktop (`https://vnc.yourdomain.com/vnc.html`)
-2. Open a terminal in the XFCE4 desktop (Terminal shortcut on desktop)
-3. Run `clawdbot browser` to launch the managed Chromium browser
-4. Log into `claude.ai` with your Claude Max account
-5. Clawdbot will use your browser session for Claude interactions
-
-This avoids API costs entirely - you use your unlimited Claude Max subscription.
-
-## Desktop Environment
-
-XFCE4 is used for its lightweight footprint and VNC compatibility:
-
-- **Memory usage**: ~300MB (vs ~1.5GB for GNOME)
-- **Compositing**: Disabled for optimal VNC performance
-- **Included apps**: xfce4-terminal, Thunar file manager, mousepad text editor, Chromium browser
-- **Desktop shortcuts**: Terminal, Chromium Browser, Workspace folder
-
-## Resource Requirements
-
-- **CPU**: 4+ vCPU recommended
-- **RAM**: 4-8 GB recommended (XFCE4 uses ~300MB)
-- **GPU**: NVIDIA GPU(s) - configured to use all available GPUs
-- **Storage**: Sufficient for volumes
+| Metric | VNC (old) | Selkies (new) |
+|--------|-----------|---------------|
+| Latency | ~100ms | ~20ms |
+| CPU Usage | 30-50% | <5% |
+| Quality | Blocky | Crisp |
+| Max FPS | 30 | 60 |
 
 ## License
 

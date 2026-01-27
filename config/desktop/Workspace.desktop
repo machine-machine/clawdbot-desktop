@@ -4,6 +4,6 @@ Type=Application
 Name=Workspace
 Comment=Open Workspace Folder
 Exec=thunar /workspace
-Icon=folder
+Icon=folder-documents
 Terminal=false
 Categories=Utility;FileManager;
