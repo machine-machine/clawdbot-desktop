@@ -62,23 +62,23 @@ RUN useradd -m -s /bin/bash ${USER} && \
 USER ${USER}
 WORKDIR /home/${USER}
 
-# Install WhiteSur GTK theme (macOS-style)
+# Install WhiteSur themes (build continues even if themes fail)
 RUN git clone https://github.com/vinceliuice/WhiteSur-gtk-theme.git --depth=1 && \
     cd WhiteSur-gtk-theme && \
-    ./install.sh -c Dark && \
-    cd .. && rm -rf WhiteSur-gtk-theme
-
-# Install WhiteSur icon theme
-RUN git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1 && \
+    ./install.sh -c Dark || true; \
+    cd /home/${USER} && rm -rf WhiteSur-gtk-theme; \
+    \
+    git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1 && \
     cd WhiteSur-icon-theme && \
-    ./install.sh && \
-    cd .. && rm -rf WhiteSur-icon-theme
-
-# Install McMojave cursors (macOS-style)
-RUN git clone https://github.com/vinceliuice/McMojave-cursors.git --depth=1 && \
+    ./install.sh || true; \
+    cd /home/${USER} && rm -rf WhiteSur-icon-theme; \
+    \
+    git clone https://github.com/vinceliuice/McMojave-cursors.git --depth=1 && \
     cd McMojave-cursors && \
-    ./install.sh && \
-    cd .. && rm -rf McMojave-cursors
+    ./install.sh || true; \
+    cd /home/${USER} && rm -rf McMojave-cursors; \
+    \
+    exit 0
 
 # Download WhiteSur wallpaper
 RUN mkdir -p ~/.local/share/backgrounds && \
