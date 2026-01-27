@@ -13,5 +13,8 @@ eval $(dbus-launch --sh-syntax)
 # Disable XFCE compositor (critical for VNC performance)
 xfconf-query -c xfwm4 -p /general/use_compositing -s false 2>/dev/null || true
 
+# Start Plank dock (macOS-style)
+plank &
+
 # Start XFCE4 session
 exec startxfce4

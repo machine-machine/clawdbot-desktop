@@ -1,4 +1,4 @@
-# VNC + noVNC + Clawdbot desktop worker (XFCE4 desktop)
+# VNC + noVNC + Clawdbot desktop worker (Pretty XFCE4 with macOS styling)
 FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -10,7 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     CLAWDBOT_HOME=/clawdbot_home \
     WORKSPACE=/workspace
 
-# Base packages + XFCE4 desktop environment
+# Base packages + XFCE4 desktop environment + theming dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       locales \
@@ -27,6 +27,11 @@ RUN apt-get update && \
       xfce4-screenshooter \
       thunar \
       mousepad \
+      # macOS-style dock
+      plank \
+      # Theme build dependencies
+      sassc \
+      libglib2.0-dev-bin \
       # Core utilities
       curl ca-certificates wget \
       git \
@@ -50,6 +55,31 @@ RUN useradd -m -s /bin/bash ${USER} && \
     echo "${USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER}
 
 USER ${USER}
+WORKDIR /tmp
+
+# Install WhiteSur GTK theme (macOS-style)
+RUN git clone https://github.com/vinceliuice/WhiteSur-gtk-theme.git --depth=1 && \
+    cd WhiteSur-gtk-theme && \
+    ./install.sh -c Dark -l && \
+    cd .. && rm -rf WhiteSur-gtk-theme
+
+# Install WhiteSur icon theme
+RUN git clone https://github.com/vinceliuice/WhiteSur-icon-theme.git --depth=1 && \
+    cd WhiteSur-icon-theme && \
+    ./install.sh && \
+    cd .. && rm -rf WhiteSur-icon-theme
+
+# Install McMojave cursors (macOS-style)
+RUN git clone https://github.com/vinceliuice/McMojave-cursors.git --depth=1 && \
+    cd McMojave-cursors && \
+    ./install.sh && \
+    cd .. && rm -rf McMojave-cursors
+
+# Download WhiteSur wallpaper
+RUN mkdir -p ~/.local/share/backgrounds && \
+    curl -sL "https://raw.githubusercontent.com/vinceliuice/WhiteSur-wallpapers/main/4k/WhiteSur-dark.png" \
+    -o ~/.local/share/backgrounds/wallpaper.png
+
 WORKDIR /home/${USER}
 
 # Install Node 22 (via NodeSource) and Clawdbot
@@ -66,6 +96,7 @@ RUN sudo mkdir -p ${CLAWDBOT_HOME} ${WORKSPACE} && \
 # Configure XFCE4 for VNC (disable compositing, set theme)
 RUN mkdir -p /home/${USER}/.config/xfce4/xfconf/xfce-perchannel-xml && \
     mkdir -p /home/${USER}/.config/xfce4/panel && \
+    mkdir -p /home/${USER}/.config/plank/dock1/launchers && \
     mkdir -p /home/${USER}/Desktop
 
 VOLUME ["${CLAWDBOT_HOME}", "${WORKSPACE}"]
@@ -76,6 +107,7 @@ COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY scripts/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY scripts/xstartup /home/developer/.vnc/xstartup
 COPY config/xfce4/ /home/developer/.config/xfce4/
+COPY config/plank/ /home/developer/.config/plank/
 COPY config/desktop/ /home/developer/Desktop/
 
 RUN chmod +x /usr/local/bin/entrypoint.sh && \
