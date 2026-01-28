@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`clawdbot-desktop` is a GPU-accelerated Dockerized XFCE4 desktop that runs Clawdbot Gateway and exposes a web-based remote desktop session via Selkies-GStreamer WebRTC streaming. It provides a persistent "AI worker PC" with a full Linux XFCE4 desktop inside a container, remotely accessible from any browser with ~20ms latency using NVENC hardware encoding.
+`clawdbot-desktop` is a GPU-accelerated Dockerized XFCE4 desktop that runs Clawdbot Gateway and exposes a web-based remote desktop session via Selkies-GStreamer WebRTC streaming. It provides a persistent "AI worker PC" with a full Linux desktop inside a container, remotely accessible from any browser with ~20ms latency using NVENC hardware encoding.
 
 ## Architecture
 
@@ -15,113 +15,102 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │  Docker Container (clawdbot-desktop-worker)     │
 │                                                 │
 │  Supervisord (Process Manager)                  │
-│  ├── D-Bus (system bus)                         │
-│  ├── PulseAudio (audio support)                 │
-│  ├── Xvfb (:0 display, 1920x1080)              │
-│  ├── XFCE4 + Plank (Desktop environment)        │
-│  ├── Selkies-GStreamer (WebRTC + NVENC)        │
-│  │   └── Port 8080 (WebRTC)                    │
-│  └── Clawdbot Gateway                           │
-│      └── Port 18789 (WebSocket)                │
+│  ├── D-Bus (priority 5)                         │
+│  ├── PulseAudio (priority 10)                   │
+│  ├── Xorg + dummy driver (priority 15)          │
+│  ├── XFCE4 + Plank dock (priority 20)           │
+│  ├── Selkies-GStreamer (priority 30)            │
+│  │   └── Port 8080 (WebRTC)                     │
+│  └── Clawdbot Gateway (priority 40)             │
+│      └── Port 18789 (WebSocket)                 │
 │                                                 │
 │  Volumes:                                       │
-│  ├── /clawdbot_home (config & state)           │
-│  └── /workspace (workspace data)               │
-│                                                 │
-│  GPU Access (NVIDIA NVENC encoding)            │
+│  ├── /clawdbot_home (config & state)            │
+│  └── /workspace (workspace data)                │
 └─────────────────────────────────────────────────┘
 ```
 
-**Key Technology Stack:**
-- Base Image: `ubuntu:22.04`
-- Streaming: Selkies-GStreamer with NVENC hardware encoding (~20ms latency)
+**Key Components:**
+- Base Image: `ghcr.io/selkies-project/selkies-gstreamer/gstreamer:main-ubuntu20.04`
+- Streaming: Selkies-GStreamer v1.6.0 with NVENC hardware encoding
 - Desktop: XFCE4 with WhiteSur macOS-style theme + Plank dock
-- Runtime: Docker + Docker Compose deployed via Coolify
-- Process Manager: Supervisord (manages Xvfb, XFCE4, Selkies, Clawdbot)
+- Display: Xorg with dummy driver at 1920x1080
+- Process Manager: Supervisord
 - AI Agent: Clawdbot Gateway (Node.js 22.x)
-
-## Repository Layout
-
-- `Dockerfile` - Builds XFCE4 + Selkies-GStreamer + Clawdbot image
-- `docker-compose.yml` - Production stack for Coolify (GPU, no host ports, volumes)
-- `docker-compose.local.yml` - Local development (no GPU, with port mappings)
-- `scripts/entrypoint.sh` - Bootstraps supervisord and environment
-- `scripts/supervisord.conf` - Defines Xvfb, XFCE4, Selkies, Clawdbot processes
-- `scripts/start-desktop.sh` - XFCE4 session startup script
-- `config/xfce4/` - XFCE4 configuration files (compositing disabled, WhiteSur theme)
-- `config/plank/` - Plank dock configuration (macOS-style dock)
-- `config/desktop/` - Desktop shortcut files (Terminal, Workspace)
-- `config/autostart/` - Autostart entries for Plank dock
-- `config/clawdbot.config.sample.json` - Optional sandbox and workspace defaults
-- `docs/prd.md` - Product requirements document
 
 ## Build and Run
 
 ```bash
 # Local development (no GPU, software encoding)
 docker compose -f docker-compose.local.yml up -d
+# Access: http://localhost:8080
 
 # Production (requires NVIDIA Container Toolkit)
 docker compose up -d
 
+# Rebuild after changes
+docker compose build --no-cache
+
 # Verify GPU access inside container
 docker compose exec clawdbot-desktop-worker nvidia-smi
+
+# Get a shell inside the container
+docker compose exec clawdbot-desktop-worker bash
 ```
+
+## Debugging
+
+```bash
+# Check service status
+supervisorctl status
+
+# View logs
+tail -f /var/log/selkies.log    # Selkies-GStreamer
+tail -f /var/log/xorg.log       # X server
+tail -f /var/log/xfce4.log      # XFCE session
+tail -f /var/log/clawdbot.log   # Clawdbot Gateway
+
+# Restart a specific service
+supervisorctl restart xfce4
+supervisorctl restart selkies
+```
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `scripts/supervisord.conf` | Process definitions and startup order |
+| `scripts/entrypoint.sh` | GPU detection, auth setup, starts supervisord |
+| `scripts/start-desktop.sh` | XFCE session startup, theme config, Plank launch |
+| `config/xorg.conf` | Xorg dummy driver config (1920x1080 resolution) |
+| `config/xfce4/` | XFCE panel, theme, and window manager settings |
+| `config/plank/` | Plank dock configuration and launcher items |
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VNC_PASSWORD` | `clawdbot` | Access password (maps to Selkies basic auth) |
-| `SELKIES_ENCODER` | `nvh264enc` | Video encoder (`nvh264enc` or `x264enc`) |
-| `SELKIES_FRAMERATE` | `60` | Target framerate |
+| `VNC_PASSWORD` | `clawdbot` | Maps to `SELKIES_BASIC_AUTH_PASSWORD` |
+| `SELKIES_ENCODER` | `nvh264enc` | Video encoder (`nvh264enc` for GPU, `x264enc` for CPU) |
+| `SELKIES_FRAMERATE` | `60` | Target framerate (30 for CPU encoding) |
 | `SELKIES_VIDEO_BITRATE` | `8000` | Bitrate in kbps |
-| `CLAWDBOT_HOME` | `/clawdbot_home` | Clawdbot data directory |
-| `WORKSPACE` | `/workspace` | Workspace directory |
-| `ANTHROPIC_API_KEY` | - | Set in Coolify for Clawdbot |
-| `OPENAI_API_KEY` | - | Set in Coolify for Clawdbot |
 
-## Exposed Ports (Internal)
-
-- `8080` - Selkies-GStreamer WebRTC interface
-- `18789` - Clawdbot UI/API gateway
+The entrypoint auto-detects GPU and falls back to `x264enc` with 30fps if no NVIDIA GPU is found.
 
 ## Coolify Deployment
 
-1. Connect GitHub repo in Coolify
-2. Select Docker Compose build pack
-3. Configure environment variables and storage volumes
-4. Deploy - Coolify handles HTTPS and reverse proxy routing
-5. Configure port routing:
-   - Desktop domain → port **8080**
-   - Gateway domain → port **18789**
+Configure two domains in Coolify:
+- Desktop domain → port **8080** (Selkies WebRTC)
+- Gateway domain → port **18789** (Clawdbot API)
 
-## Supervisord Process Priority
+WebSocket middleware is configured in `docker-compose.yml` Traefik labels for WebRTC signaling.
 
-Processes start in this order (lower number = higher priority):
-1. `dbus` (priority 5) - D-Bus system daemon
-2. `pulseaudio` (priority 10) - Audio support
-3. `xvfb` (priority 15) - Virtual framebuffer on :0
-4. `xfce4` (priority 20) - XFCE4 desktop session + Plank dock
-5. `selkies` (priority 30) - Selkies-GStreamer WebRTC on 8080 (sleeps 5s)
-6. `clawdbot-gateway` (priority 40) - Clawdbot Gateway on 18789 (sleeps 10s)
+## Theme System
 
-All processes are configured with `autorestart=true`.
+WhiteSur theme is installed from git during build with fallbacks:
+- GTK Theme: WhiteSur-Dark (fallback: Arc)
+- Icons: WhiteSur (fallback: Papirus)
+- Cursors: McMojave (fallback: DMZ)
+- Wallpaper: Downloaded from WhiteSur-wallpapers repo
 
-## XFCE4 Configuration
-
-XFCE4 is configured for optimal streaming performance:
-- Compositing is disabled (critical for streaming performance)
-- WhiteSur macOS-style dark theme
-- Plank dock at bottom (macOS-style)
-- Desktop shortcuts for Terminal and Workspace folder
-- Thunar file manager, xfce4-terminal, mousepad text editor included
-
-## Performance
-
-| Metric | VNC (old) | Selkies (new) |
-|--------|-----------|---------------|
-| Latency | ~100ms | ~20ms |
-| CPU Usage | 30-50% | <5% |
-| Quality | Blocky | Crisp |
-| Max FPS | 30 | 60 |
+Theme settings are applied at runtime in `start-desktop.sh` via `xfconf-query`.
