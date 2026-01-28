@@ -58,6 +58,16 @@ services:
 
     labels:
       - traefik.enable=true
+      # Route to Selkies WebRTC on port 8080
+      - traefik.http.services.clawdbot-desktop-worker.loadbalancer.server.port=8080
+      # HTTP router (Cloudflare handles HTTPS)
+      - traefik.http.routers.clawdbot-desktop.rule=Host(`m2.machinemachine.ai`)
+      - traefik.http.routers.clawdbot-desktop.entrypoints=http
+      - traefik.http.routers.clawdbot-desktop.service=clawdbot-desktop-worker
+      # WebSocket support for WebRTC signaling
+      - traefik.http.middlewares.clawdbot-ws.headers.customrequestheaders.Connection=keep-alive, Upgrade
+      - traefik.http.middlewares.clawdbot-ws.headers.customrequestheaders.Upgrade=websocket
+      - traefik.http.routers.clawdbot-desktop.middlewares=clawdbot-ws
 
 volumes:
   clawdbot_home:
