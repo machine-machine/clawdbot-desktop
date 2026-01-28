@@ -6,9 +6,12 @@
 # Selkies base image (includes GStreamer, NVENC, WebRTC, PulseAudio, Xvfb)
 FROM ghcr.io/selkies-project/selkies-gstreamer:24.04-20240701
 
+# Build args
+ARG DEBIAN_FRONTEND=noninteractive
+ARG SELKIES_VERSION=1.6.0
+
 # Environment
-ENV DEBIAN_FRONTEND=noninteractive \
-    LANG=en_US.UTF-8 \
+ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     TZ=UTC \
     USER=developer \
@@ -35,6 +38,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     locales \
     # Core utilities
     sudo ca-certificates curl wget git nano htop \
+    # X11 and display
+    xserver-xorg-video-dummy xserver-xorg-core x11-utils x11-xserver-utils xdotool xclip \
     # XFCE4 Desktop (lightweight)
     xfce4 xfce4-terminal xfce4-taskmanager thunar mousepad \
     # Plank dock (macOS-style)
@@ -59,6 +64,14 @@ RUN groupadd -g ${GID} ${USER} 2>/dev/null || true && \
     useradd -m -s /bin/bash -u ${UID} -g ${GID} ${USER} 2>/dev/null || true && \
     echo "${USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER} && \
     chmod 0440 /etc/sudoers.d/${USER}
+
+# =============================================================================
+# Install Selkies-GStreamer from GitHub wheel
+# =============================================================================
+RUN pip3 install --no-cache-dir --break-system-packages \
+    "https://github.com/selkies-project/selkies-gstreamer/releases/download/v${SELKIES_VERSION}/selkies_gstreamer-${SELKIES_VERSION}-py3-none-any.whl" \
+    websockets \
+    basicauth
 
 # =============================================================================
 # Install Node.js 22 + Clawdbot
@@ -125,6 +138,7 @@ COPY --chown=${USER}:${USER} config/xfce4/ /home/${USER}/.config/xfce4/
 COPY --chown=${USER}:${USER} config/plank/ /home/${USER}/.config/plank/
 COPY --chown=${USER}:${USER} config/desktop/ /home/${USER}/Desktop/
 COPY --chown=${USER}:${USER} config/autostart/ /home/${USER}/.config/autostart/
+COPY config/xorg.conf /etc/X11/xorg.conf
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY scripts/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY scripts/start-desktop.sh /usr/local/bin/start-desktop.sh
