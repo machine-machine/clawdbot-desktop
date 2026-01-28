@@ -20,6 +20,9 @@ services:
       SELKIES_VIDEO_BITRATE: 8000
       SELKIES_ENABLE_RESIZE: "true"
       SELKIES_ENABLE_BASIC_AUTH: "true"
+      # Use Google's public STUN server to help WebRTC find the connection
+      SELKIES_P2P_STUN_HOST: stun.l.google.com
+      SELKIES_P2P_STUN_PORT: 19302
 
       # GPU (need 'all' for NVENC encoding)
       NVIDIA_VISIBLE_DEVICES: all
