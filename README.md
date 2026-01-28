@@ -19,7 +19,7 @@ GPU-accelerated remote desktop for Clawdbot, using Selkies-GStreamer WebRTC stre
 │  Docker Container (clawdbot-desktop-worker)     │
 │                                                 │
 │  Supervisord (Process Manager)                  │
-│  ├── Xvfb (:0 display, 1920x1080)              │
+│  ├── Xorg (dummy) (:0 display, 1920x1080)        │
 │  ├── XFCE4 + Plank (Desktop environment)        │
 │  ├── Selkies-GStreamer (WebRTC + NVENC)        │
 │  │   └── Port 8080 (HTTPS)                     │
@@ -60,6 +60,8 @@ Access: `http://localhost:8080`
 | `SELKIES_ENCODER` | `nvh264enc` | Video encoder (`nvh264enc` or `x264enc`) |
 | `SELKIES_FRAMERATE` | `60` | Target framerate |
 | `SELKIES_VIDEO_BITRATE` | `8000` | Bitrate in kbps |
+| `SELKIES_P2P_STUN_HOST` | `stun.l.google.com` | STUN server for WebRTC NAT traversal |
+| `SELKIES_P2P_STUN_PORT` | `19302` | STUN server port |
 | `ANTHROPIC_API_KEY` | - | For Clawdbot |
 | `OPENAI_API_KEY` | - | For Clawdbot (optional) |
 
@@ -78,6 +80,51 @@ After deploying, configure domains in Coolify UI:
 Verify GPU access:
 ```bash
 docker compose exec clawdbot-desktop-worker nvidia-smi
+```
+
+## Working with the Environment
+
+### Getting a Shell
+
+To get an interactive root shell inside the running container:
+```bash
+docker compose exec clawdbot-desktop-worker bash
+```
+
+### Managing Services
+
+The container uses `supervisor` to manage all internal processes (Xorg, XFCE, Selkies, etc.). You can manage these services using `supervisorctl`.
+
+- **Check status of all services:**
+  ```bash
+  supervisorctl status
+  ```
+
+- **Restart a specific service (e.g., XFCE):**
+  ```bash
+  supervisorctl restart xfce4
+  ```
+
+### Key Configuration Files
+
+The container is configured through several files. Understanding these can help with debugging and customization.
+
+- **/etc/supervisor/conf.d/supervisord.conf**: The main `supervisor` configuration file. Defines all the services that are run on container startup.
+- **/etc/X11/xorg.conf**: Configures the `Xorg` server and the `dummy` video driver, setting the virtual screen resolution.
+- **/usr/local/bin/start-desktop.sh**: This script is executed by `supervisor` to start the XFCE desktop session. It sets environment variables, applies XFCE settings (like enabling compositing), and starts the Plank dock.
+- **~/.config/xfce4/**: This directory contains user-specific XFCE4 settings, including panel, theme, and desktop configuration.
+
+### Viewing Logs
+
+Logs for each supervised service are located in `/var/log/`.
+
+- **Xorg server log**: `/var/log/xorg.log`
+- **Selkies-GStreamer log**: `/var/log/selkies.log`
+- **XFCE session log**: `/var/log/xfce4.log`
+
+You can view them live using `tail`:
+```bash
+tail -f /var/log/selkies.log
 ```
 
 ## Performance Comparison
