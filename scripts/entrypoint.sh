@@ -18,6 +18,19 @@ chown messagebus:messagebus /var/run/dbus 2>/dev/null || chown root:root /var/ru
 chown -R developer:developer ${CLAWDBOT_HOME} ${WORKSPACE} 2>/dev/null || true
 
 # =============================================================================
+# Initialize Flatpak user directory (persistent storage for apps)
+# =============================================================================
+export FLATPAK_USER_DIR="${CLAWDBOT_HOME}/flatpak"
+mkdir -p "${FLATPAK_USER_DIR}"
+chown -R developer:developer "${FLATPAK_USER_DIR}"
+
+# Add Flathub for user if not exists (first run)
+if [ ! -d "${FLATPAK_USER_DIR}/repo" ]; then
+    echo "Initializing Flatpak user installation..."
+    su developer -c "flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo" || true
+fi
+
+# =============================================================================
 # Map VNC_PASSWORD to Selkies auth (backwards compatibility)
 # =============================================================================
 export SELKIES_BASIC_AUTH_USER="${SELKIES_BASIC_AUTH_USER:-developer}"

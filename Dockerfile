@@ -28,7 +28,9 @@ ENV LANG=en_US.UTF-8 \
     SELKIES_ENABLE_BASIC_AUTH=true \
     # Clawdbot paths
     CLAWDBOT_HOME=/clawdbot_home \
-    WORKSPACE=/workspace
+    WORKSPACE=/workspace \
+    # Flatpak user installation to persistent volume
+    FLATPAK_USER_DIR=/clawdbot_home/flatpak
 
 # =============================================================================
 # Install Desktop Environment + Dependencies
@@ -54,8 +56,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-liberation libnss3 libxss1 libasound2 libatk-bridge2.0-0 libgtk-3-0 \
     # Process management & audio
     supervisor dbus dbus-x11 pulseaudio \
+    # Flatpak for app installation
+    flatpak \
     && locale-gen en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
+
+# Add Flathub repository (system-wide, user apps go to persistent volume)
+RUN flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 # Install Google Chrome (Ubuntu's chromium-browser is snap-only, doesn't work in Docker)
 RUN curl -fsSL https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o /tmp/chrome.deb && \
@@ -94,6 +101,22 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/* && \
     npm install -g clawdbot@latest
+
+# =============================================================================
+# Install Cargstore (App Store) - TODO: Enable once release is available
+# =============================================================================
+# ARG CARGSTORE_VERSION=v0.1.0
+# RUN curl -fsSL "https://github.com/machine-machine/cargstore/releases/download/${CARGSTORE_VERSION}/cargstore-linux-x64.tar.gz" \
+#     | tar -xzf - -C /opt/cargstore && \
+#     echo '[Desktop Entry]\n\
+# Name=Cargstore\n\
+# Comment=App Store for Clawdbot Desktop\n\
+# Exec=/opt/cargstore/cargstore\n\
+# Icon=/opt/cargstore/resources/app/assets/icon.png\n\
+# Terminal=false\n\
+# Type=Application\n\
+# Categories=System;PackageManager;\n\
+# StartupWMClass=Cargstore' > /usr/share/applications/cargstore.desktop
 
 # =============================================================================
 # Install WhiteSur Theme (macOS-style)
