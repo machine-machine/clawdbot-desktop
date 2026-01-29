@@ -94,6 +94,7 @@ supervisorctl restart selkies
 | `SELKIES_ENCODER` | `nvh264enc` | Video encoder (`nvh264enc` for GPU, `x264enc` for CPU) |
 | `SELKIES_FRAMERATE` | `60` | Target framerate (30 for CPU encoding) |
 | `SELKIES_VIDEO_BITRATE` | `8000` | Bitrate in kbps |
+| `SELKIES_GPU_ID` | `0` | GPU index for NVENC encoding (0, 1, etc.) |
 | `TURN_HOST` | (none) | TURN server hostname for WebRTC relay |
 | `TURN_PORT` | `80` | TURN server port (80 for TCP, 443 for TLS) |
 | `TURN_USERNAME` | (none) | TURN authentication username |
