@@ -59,10 +59,7 @@ services:
       - traefik.http.routers.clawdbot-desktop.rule=Host(`m2.machinemachine.ai`)
       - traefik.http.routers.clawdbot-desktop.entrypoints=http
       - traefik.http.routers.clawdbot-desktop.service=clawdbot-desktop-worker
-      # WebSocket support for Guacamole
-      - traefik.http.middlewares.clawdbot-ws.headers.customrequestheaders.Connection=keep-alive, Upgrade
-      - traefik.http.middlewares.clawdbot-ws.headers.customrequestheaders.Upgrade=websocket
-      - traefik.http.routers.clawdbot-desktop.middlewares=clawdbot-ws
+      # WebSocket: Traefik handles upgrades automatically, no middleware needed
 
 volumes:
   clawdbot_home:
