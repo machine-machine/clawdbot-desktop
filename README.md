@@ -105,6 +105,27 @@ The container uses `supervisor` to manage all internal processes (Xorg, XFCE, Se
   supervisorctl restart xfce4
   ```
 
+### Persistent Desktop Settings
+
+Desktop settings (XFCE panels, Plank dock, autostart apps) persist across container restarts and rebuilds. They're stored in `/clawdbot_home/desktop-config/`.
+
+**Reset to Defaults:**
+
+If you want to reset your desktop customizations back to the original defaults:
+
+```bash
+# Reset all desktop settings
+docker compose exec clawdbot-desktop-worker rm -rf /clawdbot_home/desktop-config
+
+# Or reset only specific configs
+docker compose exec clawdbot-desktop-worker rm -rf /clawdbot_home/desktop-config/xfce4   # XFCE panels/theme
+docker compose exec clawdbot-desktop-worker rm -rf /clawdbot_home/desktop-config/plank   # Dock settings
+docker compose exec clawdbot-desktop-worker rm -rf /clawdbot_home/desktop-config/autostart  # Startup apps
+
+# Restart to apply defaults
+docker compose restart
+```
+
 ### Key Configuration Files
 
 The container is configured through several files. Understanding these can help with debugging and customization.
@@ -112,7 +133,7 @@ The container is configured through several files. Understanding these can help 
 - **/etc/supervisor/conf.d/supervisord.conf**: The main `supervisor` configuration file. Defines all the services that are run on container startup.
 - **/etc/X11/xorg.conf**: Configures the `Xorg` server and the `dummy` video driver, setting the virtual screen resolution.
 - **/usr/local/bin/start-desktop.sh**: This script is executed by `supervisor` to start the XFCE desktop session. It sets environment variables, applies XFCE settings (like enabling compositing), and starts the Plank dock.
-- **~/.config/xfce4/**: This directory contains user-specific XFCE4 settings, including panel, theme, and desktop configuration.
+- **~/.config/xfce4/**: This directory contains user-specific XFCE4 settings (symlinked to persistent storage).
 
 ### Viewing Logs
 
