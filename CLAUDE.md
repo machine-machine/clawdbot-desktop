@@ -108,7 +108,7 @@ The entrypoint auto-detects GPU and falls back to `x264enc` with 30fps if no NVI
 | Project | `machine.machine` |
 | Application UUID | `t44s0oww0sc4koko88ocs84w` |
 | Coolify URL Path | `/project/q8w4cwskgwkgg0cg00k00coo/environment/tkgkkwc0w0cso4ooc48848c4/application/t44s0oww0sc4koko88ocs84w` |
-| Container Name Pattern | `clawdbot-desktop-worker-oksko*` |
+| Container Name Pattern | `clawdbot-desktop-worker-t44s0oww0sc4koko88ocs84w-*` |
 | Desktop Port | 8080 (Selkies WebRTC) |
 | Gateway Port | 18789 (Clawdbot WebSocket) |
 
@@ -171,9 +171,11 @@ Note: If MCP returns 403 errors, check the Coolify API token configuration.
 |-------|---------|-----|
 | Old version deployed | Logs show `vncserver`/`novnc` instead of `selkies` | Push to selkies branch to trigger redeploy |
 | vncserver FATAL | `gave up: vncserver entered FATAL state` | Check if using Selkies (expected) or VNC (outdated) |
+| dbus FATAL | `Failed to bind socket "/var/run/dbus/system_bus_socket"` | Fixed: entrypoint.sh creates `/var/run/dbus` |
+| Selkies GStreamer error | `Namespace Gst not available` | Fixed: supervisord.conf sources `/opt/gstreamer/gst-env` |
+| Container unhealthy | Healthcheck fails with 401 | Fixed: healthcheck accepts 401 (auth enabled) |
 | Xorg won't start | No display available | Check `/var/log/xorg.log` for driver issues |
 | Selkies not connecting | WebSocket errors | Verify Traefik labels and port 8080 exposure |
-| Container unhealthy | Healthcheck fails | Check if port 8080 is responding |
 
 ### Port Mapping
 
