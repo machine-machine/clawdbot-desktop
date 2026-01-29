@@ -65,7 +65,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential autoconf automake libtool pkg-config \
     # Required libraries for guacd
     libcairo2-dev libjpeg-turbo8-dev libpng-dev \
-    libossp-uuid-dev libfreerdp-dev libpango1.0-dev \
+    uuid-dev libfreerdp2-dev libpango1.0-dev \
     libssh2-1-dev libvncserver-dev libssl-dev \
     libvorbis-dev libpulse-dev libwebp-dev libwebsockets-dev \
     && rm -rf /var/lib/apt/lists/*
