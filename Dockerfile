@@ -60,12 +60,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Build guacd (Guacamole Server) from source
 # =============================================================================
 ARG GUACAMOLE_VERSION=1.5.5
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
     # Build dependencies
     build-essential autoconf automake libtool pkg-config \
     # Required libraries for guacd
     libcairo2-dev libjpeg-turbo8-dev libpng-dev \
-    uuid-dev libfreerdp2-dev libpango1.0-dev \
+    uuid-dev freerdp2-dev libpango1.0-dev \
     libssh2-1-dev libvncserver-dev libssl-dev \
     libvorbis-dev libpulse-dev libwebp-dev libwebsockets-dev \
     && rm -rf /var/lib/apt/lists/*
