@@ -194,3 +194,88 @@ WhiteSur theme is installed from git during build with fallbacks:
 - Wallpaper: Downloaded from WhiteSur-wallpapers repo
 
 Theme settings are applied at runtime in `start-desktop.sh` via `xfconf-query`.
+
+## Cargstore (App Store)
+
+Cargstore is an Electron-based app store for installing Flatpak applications. It's bundled into the container at `/opt/cargstore/`.
+
+### Architecture
+
+```
+Cargstore (Electron App)
+├── React UI (discover, search, installed, updates)
+├── Flatpak Manager (shell wrapper for flatpak CLI)
+└── Clawdbot Client (WebSocket to Gateway - future)
+
+Flatpak Storage:
+├── /clawdbot_home/flatpak/     (persistent volume)
+└── ~/.local/share/flatpak/     (symlink to above, created by entrypoint)
+```
+
+### How Flatpak Persistence Works
+
+Apps installed via Cargstore persist across container rebuilds:
+
+1. **Dockerfile** sets `FLATPAK_USER_DIR=/clawdbot_home/flatpak`
+2. **entrypoint.sh** creates symlink: `~/.local/share/flatpak -> /clawdbot_home/flatpak`
+3. **Flathub remote** is added on first run if not present
+4. Apps install to the persistent volume, survive rebuilds
+
+### App Catalog
+
+Cargstore uses a curated catalog at `/opt/cargstore/resources/catalog/apps.json`:
+
+| Field | Description |
+|-------|-------------|
+| `flatpakRef` | Flathub reference (e.g., `flathub:app/org.videolan.VLC/x86_64/stable`) |
+| `bundleUrl` | Direct `.flatpak` bundle URL for non-Flathub apps |
+| `category` | One of: `development`, `creative`, `office`, `ai-ml`, `agents`, `browsers`, `utilities` |
+
+### Running Flatpak Apps
+
+Electron apps in Flatpak require proper D-Bus session:
+
+```bash
+# Inside container - find D-Bus address from XFCE session
+cat /proc/$(pgrep -f xfce4-session)/environ | tr '\0' '\n' | grep DBUS
+# Example output: DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-xxxxx
+
+# Run app with correct environment
+su - developer -c '
+  export DISPLAY=:0
+  export XDG_RUNTIME_DIR=/tmp/runtime-developer
+  export DBUS_SESSION_BUS_ADDRESS="unix:abstract=/tmp/dbus-xxxxx"
+  flatpak run com.autoclaude.ui
+'
+```
+
+### Debugging Flatpak
+
+```bash
+CONTAINER=$(docker ps -q --filter "name=clawdbot-desktop-worker")
+
+# Check apps visible to developer user
+docker exec $CONTAINER su - developer -c "flatpak list"
+
+# Verify symlink exists
+docker exec $CONTAINER ls -la /home/developer/.local/share/flatpak
+
+# Check persistent storage
+docker exec $CONTAINER ls -la /clawdbot_home/flatpak/app/
+
+# Install app manually
+docker exec $CONTAINER su - developer -c "flatpak install -y --user flathub org.videolan.VLC"
+```
+
+### Common Flatpak Issues
+
+| Issue | Symptom | Fix |
+|-------|---------|-----|
+| App "not installed" | Root sees it, developer doesn't | Check symlink exists: `~/.local/share/flatpak -> /clawdbot_home/flatpak` |
+| D-Bus error | `Failed to connect to session bus` | Set `DBUS_SESSION_BUS_ADDRESS` from xfce4-session |
+| Sandbox error | `Running as root without --no-sandbox` | Run as developer user, not root |
+| Summary size exceeded | `exceeded maximum size of 10485760` | Flatpak version too old (need PPA) |
+
+### Related Repo
+
+The Cargstore source is at `/home/hi/coolify-repos/cargstore` (same level as this repo).
