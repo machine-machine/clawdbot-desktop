@@ -118,13 +118,15 @@ RUN mkdir -p /opt/cargstore && \
         '[Desktop Entry]' \
         'Name=Cargstore' \
         'Comment=App Store for Clawdbot Desktop' \
-        'Exec=/opt/cargstore/cargstore --no-sandbox' \
+        'Exec=/opt/cargstore/cargstore --no-sandbox %U' \
         'Icon=system-software-install' \
         'Terminal=false' \
         'Type=Application' \
         'Categories=System;PackageManager;' \
         'StartupWMClass=Cargstore' \
-    > /usr/share/applications/cargstore.desktop
+        'MimeType=x-scheme-handler/flatpak;' \
+    > /usr/share/applications/cargstore.desktop && \
+    update-desktop-database /usr/share/applications 2>/dev/null || true
 
 # =============================================================================
 # Install WhiteSur Theme (macOS-style)

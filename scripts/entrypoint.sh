@@ -38,6 +38,16 @@ if [ ! -d "${FLATPAK_USER_DIR}/repo" ]; then
 fi
 
 # =============================================================================
+# Register Cargstore as flatpak: URI handler
+# =============================================================================
+mkdir -p /home/developer/.config
+cat > /home/developer/.config/mimeapps.list << 'EOF'
+[Default Applications]
+x-scheme-handler/flatpak=cargstore.desktop
+EOF
+chown -R developer:developer /home/developer/.config/mimeapps.list
+
+# =============================================================================
 # Map VNC_PASSWORD to Selkies auth (backwards compatibility)
 # =============================================================================
 export SELKIES_BASIC_AUTH_USER="${SELKIES_BASIC_AUTH_USER:-developer}"
