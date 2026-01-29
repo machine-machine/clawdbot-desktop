@@ -203,7 +203,7 @@ app.get('/', (req, res) => {
     <div id="display"></div>
     <div id="status"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/guacamole-common-js@1.5.0/dist/guacamole-common.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/guacamole-common-js@1.5.0/dist/cjs/guacamole-common.min.js"></script>
     <script>
         let guac;
         let connected = false;
