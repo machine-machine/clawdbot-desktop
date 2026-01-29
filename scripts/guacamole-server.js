@@ -228,8 +228,11 @@ app.get('/', (req, res) => {
             document.getElementById('display').innerHTML = '';
 
             try {
-                // Get connection token
-                const tokenRes = await fetch('/api/token');
+                // Get connection token (include credentials for basic auth)
+                const tokenRes = await fetch('/api/token', { credentials: 'include' });
+                if (!tokenRes.ok) {
+                    throw new Error('Failed to get token: ' + tokenRes.status);
+                }
                 const { token } = await tokenRes.json();
 
                 // Build WebSocket URL
