@@ -358,7 +358,7 @@ const guacServer = new GuacamoleLite(
     {
         crypt: {
             cypher: 'aes-256-cbc',
-            key: SECRET_KEY,
+            key: Buffer.from(SECRET_KEY, 'hex'),
         },
         log: {
             level: process.env.GUAC_LOG_LEVEL || 'NORMAL',
