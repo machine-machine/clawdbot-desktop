@@ -69,9 +69,12 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'guacamole-lite' });
 });
 
-// Serve static client files (exclude WebSocket path from auth - it handles its own auth via token)
+// Serve static files (JS libraries, no auth needed)
+app.use('/static', express.static(path.join(__dirname, 'static')));
+
+// Serve static client files (exclude WebSocket path and static from auth)
 app.use((req, res, next) => {
-    if (req.path === '/websocket' || req.path.startsWith('/websocket')) {
+    if (req.path === '/websocket' || req.path.startsWith('/websocket') || req.path.startsWith('/static')) {
         return next();
     }
     return basicAuth(req, res, next);
@@ -203,7 +206,7 @@ app.get('/', (req, res) => {
     <div id="display"></div>
     <div id="status"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/guacamole-common-js@1.5.0/dist/cjs/guacamole-common.min.js"></script>
+    <script src="/static/guacamole.min.js"></script>
     <script>
         let guac;
         let connected = false;

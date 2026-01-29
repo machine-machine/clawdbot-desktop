@@ -206,6 +206,7 @@ COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY scripts/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY scripts/start-desktop.sh /usr/local/bin/start-desktop.sh
 COPY scripts/guacamole-server.js /opt/guacamole-lite/server.js
+COPY scripts/static/ /opt/guacamole-lite/static/
 
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/start-desktop.sh && \
     chown -R ${USER}:${USER} /home/${USER}
