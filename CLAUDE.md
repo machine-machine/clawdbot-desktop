@@ -26,6 +26,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 │                                                 │
 │  Volumes:                                       │
 │  ├── /clawdbot_home (config & state)            │
+│  │   ├── desktop-config/ (XFCE, Plank)          │
+│  │   └── flatpak/ (installed apps)              │
 │  └── /workspace (workspace data)                │
 └─────────────────────────────────────────────────┘
 ```
@@ -259,6 +261,47 @@ WhiteSur theme is installed from git during build with fallbacks:
 
 Theme settings are applied at runtime in `start-desktop.sh` via `xfconf-query`.
 
+## Persistent Desktop Settings
+
+Desktop settings (XFCE, Plank dock, autostart apps) persist across container rebuilds and restarts.
+
+### How It Works
+
+On container startup, `entrypoint.sh` creates symlinks from the normal config locations to the persistent volume:
+
+```
+/home/developer/.config/xfce4/    → /clawdbot_home/desktop-config/xfce4/
+/home/developer/.config/plank/    → /clawdbot_home/desktop-config/plank/
+/home/developer/.config/autostart/ → /clawdbot_home/desktop-config/autostart/
+```
+
+On first run, default configs are copied from the container image to the persistent storage.
+
+### What Persists
+
+| Setting Type | Location | Examples |
+|--------------|----------|----------|
+| XFCE4 | `xfce4/` | Panel layout, theme, keyboard shortcuts, desktop icons |
+| Plank dock | `plank/` | Dock position, pinned apps, icon size |
+| Autostart | `autostart/` | Apps that launch on login |
+
+### Resetting to Defaults
+
+To reset desktop settings to defaults, delete the persistent config:
+
+```bash
+CONTAINER=$(docker ps -q --filter "name=clawdbot-desktop-worker")
+
+# Reset all desktop settings
+docker exec $CONTAINER rm -rf /clawdbot_home/desktop-config
+
+# Or reset specific config
+docker exec $CONTAINER rm -rf /clawdbot_home/desktop-config/xfce4
+
+# Restart container to reinitialize
+docker restart $CONTAINER
+```
+
 ## Cargstore (App Store)
 
 Cargstore is an Electron-based app store for installing Flatpak applications. It's bundled into the container at `/opt/cargstore/`.
@@ -271,9 +314,12 @@ Cargstore (Electron App)
 ├── Flatpak Manager (shell wrapper for flatpak CLI)
 └── Clawdbot Client (WebSocket to Gateway - future)
 
-Flatpak Storage:
-├── /clawdbot_home/flatpak/     (persistent volume)
-└── ~/.local/share/flatpak/     (symlink to above, created by entrypoint)
+Persistent Storage (/clawdbot_home/):
+├── desktop-config/             (XFCE, Plank, autostart settings)
+│   ├── xfce4/                  (symlinked from ~/.config/xfce4/)
+│   ├── plank/                  (symlinked from ~/.config/plank/)
+│   └── autostart/              (symlinked from ~/.config/autostart/)
+└── flatpak/                    (symlinked from ~/.local/share/flatpak/)
 ```
 
 ### How Flatpak Persistence Works

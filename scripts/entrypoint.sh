@@ -18,6 +18,45 @@ chown messagebus:messagebus /var/run/dbus 2>/dev/null || chown root:root /var/ru
 chown -R developer:developer ${CLAWDBOT_HOME} ${WORKSPACE} 2>/dev/null || true
 
 # =============================================================================
+# Initialize persistent desktop config (survives container rebuilds)
+# =============================================================================
+DESKTOP_CONFIG="${CLAWDBOT_HOME}/desktop-config"
+mkdir -p "${DESKTOP_CONFIG}"
+
+# List of config directories to persist
+# Format: "source_in_container:name_in_persistent_storage"
+PERSIST_CONFIGS=(
+    "/home/developer/.config/xfce4:xfce4"
+    "/home/developer/.config/plank:plank"
+    "/home/developer/.config/autostart:autostart"
+)
+
+for config_pair in "${PERSIST_CONFIGS[@]}"; do
+    SRC="${config_pair%%:*}"
+    NAME="${config_pair##*:}"
+    PERSIST_DIR="${DESKTOP_CONFIG}/${NAME}"
+
+    if [ ! -d "${PERSIST_DIR}" ]; then
+        # First run: copy defaults from container to persistent storage
+        echo "Initializing persistent ${NAME} config..."
+        if [ -d "${SRC}" ]; then
+            cp -a "${SRC}" "${PERSIST_DIR}"
+        else
+            mkdir -p "${PERSIST_DIR}"
+        fi
+    fi
+
+    # Symlink container path to persistent storage
+    rm -rf "${SRC}"
+    mkdir -p "$(dirname "${SRC}")"
+    ln -sf "${PERSIST_DIR}" "${SRC}"
+    chown -h developer:developer "${SRC}"
+done
+
+chown -R developer:developer "${DESKTOP_CONFIG}"
+echo "✓ Desktop settings persistent at ${DESKTOP_CONFIG}"
+
+# =============================================================================
 # Initialize Flatpak user directory (persistent storage for apps)
 # =============================================================================
 export FLATPAK_USER_DIR="${CLAWDBOT_HOME}/flatpak"
