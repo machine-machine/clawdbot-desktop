@@ -90,10 +90,11 @@ ICE_SERVERS='{"urls": ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:
 
 if [ -n "${TURN_HOST}" ]; then
     TURN_PORT="${TURN_PORT:-80}"
-    TURN_URLS="turn:${TURN_HOST}:${TURN_PORT}"
+    # Use TCP transport (UDP often blocked), add ?transport=tcp for browser compatibility
+    TURN_URLS="turn:${TURN_HOST}:${TURN_PORT}?transport=tcp"
     # Only include turns:// URL for port 443 (TLS)
     if [ "${TURN_PORT}" = "443" ]; then
-        TURN_URL_LIST="\"${TURN_URLS}\", \"turns:${TURN_HOST}:${TURN_PORT}\""
+        TURN_URL_LIST="\"${TURN_URLS}\", \"turns:${TURN_HOST}:${TURN_PORT}?transport=tcp\""
     else
         TURN_URL_LIST="\"${TURN_URLS}\""
     fi
@@ -104,7 +105,7 @@ if [ -n "${TURN_HOST}" ]; then
         TURN_SERVER="{\"urls\": [${TURN_URL_LIST}]}"
     fi
     ICE_SERVERS="${ICE_SERVERS}, ${TURN_SERVER}"
-    echo "✓ TURN server configured: ${TURN_HOST}:${TURN_PORT}"
+    echo "✓ TURN server configured: ${TURN_HOST}:${TURN_PORT} (TCP)"
 else
     echo "⚠ No TURN server configured (set TURN_HOST, TURN_USERNAME, TURN_PASSWORD)"
     echo "  External users behind restrictive NATs may not be able to connect"

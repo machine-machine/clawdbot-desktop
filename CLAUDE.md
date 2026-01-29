@@ -95,7 +95,7 @@ supervisorctl restart selkies
 | `SELKIES_FRAMERATE` | `60` | Target framerate (30 for CPU encoding) |
 | `SELKIES_VIDEO_BITRATE` | `8000` | Bitrate in kbps |
 | `TURN_HOST` | (none) | TURN server hostname for WebRTC relay |
-| `TURN_PORT` | `3478` | TURN server port |
+| `TURN_PORT` | `80` | TURN server port (80 for TCP, 443 for TLS) |
 | `TURN_USERNAME` | (none) | TURN authentication username |
 | `TURN_PASSWORD` | (none) | TURN authentication password |
 
@@ -105,36 +105,63 @@ The entrypoint auto-detects GPU and falls back to `x264enc` with 30fps if no NVI
 
 External users behind restrictive NATs/firewalls need a TURN server to relay WebRTC traffic. Without TURN, the browser shows "No TURN servers found" and connection fails.
 
-**Option 1: Metered.ca (Free Tier)**
+**Important:** The server uses TCP for TURN (UDP is often blocked). Port 80 works best.
+
+**Option 1: Open Relay (Current Setup)**
+```
+TURN_HOST=openrelay.metered.ca
+TURN_PORT=80
+TURN_USERNAME=openrelayproject
+TURN_PASSWORD=openrelayproject
+```
+
+**Option 2: Metered.ca (Free Tier)**
 1. Sign up at https://www.metered.ca/stun-turn
 2. Get credentials from dashboard
 3. Set environment variables:
    ```
-   TURN_HOST=a]global.relay.metered.ca
-   TURN_PORT=443
+   TURN_HOST=global.relay.metered.ca
+   TURN_PORT=80
    TURN_USERNAME=your-api-key
    TURN_PASSWORD=your-api-secret
    ```
 
-**Option 2: Self-hosted coturn**
+**Option 3: Self-hosted coturn**
 ```bash
 # Install on a server with public IP
 apt install coturn
 # Configure /etc/turnserver.conf with realm, user credentials
-# Open ports 3478 (TCP/UDP) and 49152-65535 (UDP)
-```
-
-**Option 3: Open Relay (Testing Only)**
-```
-TURN_HOST=openrelay.metered.ca
-TURN_PORT=443
-TURN_USERNAME=openrelayproject
-TURN_PASSWORD=openrelayproject
+# Open ports 80 (TCP) for TURN relay
 ```
 
 ## Coolify Deployment (selkies branch)
 
 **This section is specific to the `selkies` branch deployment on Coolify.**
+
+### Network Architecture
+
+The deployment uses **Cloudflare Tunnel** for HTTPS access, with TURN relay for WebRTC media:
+
+```
+┌─────────────┐                         ┌─────────────────┐
+│   Browser   │──── WebSocket ─────────▶│ Cloudflare      │──▶ Coolify/Selkies
+│   Client    │    (signalling)         │ Tunnel          │    (port 8080)
+│             │                         │ m2.machinemachine.ai
+└─────────────┘                         └─────────────────┘
+       │
+       │ WebRTC Media (TCP port 80)
+       ▼
+┌─────────────────┐
+│ TURN Server     │◀──── TCP ───────── Server Container
+│ openrelay:80    │    (relay)         (outbound to TURN)
+└─────────────────┘
+```
+
+**Key Points:**
+- Cloudflare Tunnel proxies HTTP/WebSocket only (signalling)
+- TURN relay traffic bypasses Cloudflare (direct Client ↔ TURN ↔ Server)
+- UDP is blocked from server, so TURN uses TCP on port 80
+- External clients REQUIRE working TURN for WebRTC connectivity
 
 ### Application Details
 
@@ -146,6 +173,7 @@ TURN_PASSWORD=openrelayproject
 | Container Name Pattern | `clawdbot-desktop-worker-t44s0oww0sc4koko88ocs84w-*` |
 | Desktop Port | 8080 (Selkies WebRTC) |
 | Gateway Port | 18789 (Clawdbot WebSocket) |
+| External URL | `https://m2.machinemachine.ai` (via Cloudflare Tunnel) |
 
 ### Deployment Workflow
 
