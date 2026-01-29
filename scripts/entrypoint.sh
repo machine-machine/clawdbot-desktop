@@ -41,12 +41,21 @@ else
     export SELKIES_FRAMERATE="${SELKIES_FRAMERATE:-30}"
 fi
 
+# =============================================================================
+# Configure TURN server for WebRTC (use TCP to bypass firewall restrictions)
+# =============================================================================
+export SELKIES_TURN_HOST="${SELKIES_TURN_HOST:-staticauth.openrelay.metered.ca}"
+export SELKIES_TURN_PORT="${SELKIES_TURN_PORT:-443}"
+export SELKIES_TURN_PROTOCOL="${SELKIES_TURN_PROTOCOL:-tcp}"
+export SELKIES_TURN_SHARED_SECRET="${SELKIES_TURN_SHARED_SECRET:-openrelayprojectsecret}"
+
 echo ""
 echo "Streaming Configuration:"
 echo "  Encoder: ${SELKIES_ENCODER}"
 echo "  Framerate: ${SELKIES_FRAMERATE:-60} fps"
 echo "  Bitrate: ${SELKIES_VIDEO_BITRATE:-8000} kbps"
 echo "  Resolution: auto (resizable)"
+echo "  TURN: ${SELKIES_TURN_HOST}:${SELKIES_TURN_PORT} (${SELKIES_TURN_PROTOCOL})"
 echo ""
 
 # Start supervisord
