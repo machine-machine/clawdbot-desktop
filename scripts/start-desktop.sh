@@ -14,6 +14,10 @@ done
 
 export DISPLAY=:0
 export XDG_RUNTIME_DIR=/tmp/runtime-developer
+
+# Set initial resolution (dummy driver starts at full Virtual size)
+xrandr --output default --mode 1920x1080 2>/dev/null || true
+
 # Ensure dbus is available for theme switching
 export DBUS_SESSION_BUS_ADDRESS=$(dbus-launch --sh-syntax | grep DBUS_SESSION_BUS_ADDRESS | cut -d= -f2- | tr -d "'")
 
