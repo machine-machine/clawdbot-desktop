@@ -155,10 +155,10 @@ VOLUME ["${CLAWDBOT_HOME}", "${WORKSPACE}"]
 EXPOSE 8080 18789
 
 # =============================================================================
-# Healthcheck
+# Healthcheck - check if selkies port is listening (auth returns 401 which is OK)
 # =============================================================================
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/ || exit 1
+    CMD curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/ | grep -qE '^(200|401)$' || exit 1
 
 # =============================================================================
 # Entrypoint
