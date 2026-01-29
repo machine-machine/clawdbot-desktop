@@ -2,7 +2,7 @@
 Alignment=3
 AutohideMode=3
 CurrentWorkspaceOnly=false
-DockItems=terminal.dockitem;chrome.dockitem;thunar.dockitem
+DockItems=terminal.dockitem;chrome.dockitem;cargstore.dockitem;thunar.dockitem
 HideDelay=500
 HideMode=3
 IconSize=48

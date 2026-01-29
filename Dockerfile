@@ -103,20 +103,24 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     npm install -g clawdbot@latest
 
 # =============================================================================
-# Install Cargstore (App Store) - TODO: Enable once release is available
+# Install Cargstore (App Store)
 # =============================================================================
-# ARG CARGSTORE_VERSION=v0.1.0
-# RUN curl -fsSL "https://github.com/machine-machine/cargstore/releases/download/${CARGSTORE_VERSION}/cargstore-linux-x64.tar.gz" \
-#     | tar -xzf - -C /opt/cargstore && \
-#     echo '[Desktop Entry]\n\
-# Name=Cargstore\n\
-# Comment=App Store for Clawdbot Desktop\n\
-# Exec=/opt/cargstore/cargstore\n\
-# Icon=/opt/cargstore/resources/app/assets/icon.png\n\
-# Terminal=false\n\
-# Type=Application\n\
-# Categories=System;PackageManager;\n\
-# StartupWMClass=Cargstore' > /usr/share/applications/cargstore.desktop
+ARG CARGSTORE_VERSION=0.1.0
+RUN mkdir -p /opt/cargstore && \
+    curl -fsSL "https://github.com/machine-machine/cargstore/releases/download/v${CARGSTORE_VERSION}/cargstore-${CARGSTORE_VERSION}.tar.gz" \
+    | tar -xzf - -C /opt/cargstore && \
+    chmod +x /opt/cargstore/cargstore && \
+    printf '%s\n' \
+        '[Desktop Entry]' \
+        'Name=Cargstore' \
+        'Comment=App Store for Clawdbot Desktop' \
+        'Exec=/opt/cargstore/cargstore --no-sandbox' \
+        'Icon=system-software-install' \
+        'Terminal=false' \
+        'Type=Application' \
+        'Categories=System;PackageManager;' \
+        'StartupWMClass=Cargstore' \
+    > /usr/share/applications/cargstore.desktop
 
 # =============================================================================
 # Install WhiteSur Theme (macOS-style)
