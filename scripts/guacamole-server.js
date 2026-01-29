@@ -69,8 +69,13 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', service: 'guacamole-lite' });
 });
 
-// Serve static client files
-app.use(basicAuth);
+// Serve static client files (exclude WebSocket path from auth - it handles its own auth via token)
+app.use((req, res, next) => {
+    if (req.path === '/websocket' || req.path.startsWith('/websocket')) {
+        return next();
+    }
+    return basicAuth(req, res, next);
+});
 
 // Generate connection token
 app.get('/api/token', (req, res) => {
