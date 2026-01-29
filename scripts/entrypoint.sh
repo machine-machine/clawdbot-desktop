@@ -24,6 +24,13 @@ export FLATPAK_USER_DIR="${CLAWDBOT_HOME}/flatpak"
 mkdir -p "${FLATPAK_USER_DIR}"
 chown -R developer:developer "${FLATPAK_USER_DIR}"
 
+# Symlink developer's flatpak dir to persistent volume (for XFCE session)
+# This ensures apps installed via Cargstore persist across container rebuilds
+mkdir -p /home/developer/.local/share
+rm -rf /home/developer/.local/share/flatpak
+ln -sf "${FLATPAK_USER_DIR}" /home/developer/.local/share/flatpak
+chown -h developer:developer /home/developer/.local/share/flatpak
+
 # Add Flathub for user if not exists (first run)
 if [ ! -d "${FLATPAK_USER_DIR}/repo" ]; then
     echo "Initializing Flatpak user installation..."
@@ -60,6 +67,8 @@ fi
 # Create RTC config with Google STUN servers for reliable ICE candidate discovery
 # This is critical for WebRTC to work through Docker NAT - without it, only
 # internal Docker IPs are advertised and clients can't connect
+# Remove any stale file first (can be left by previous runs with wrong permissions)
+rm -f /tmp/rtc.json
 cat > /tmp/rtc.json << 'EOF'
 {
   "lifetimeDuration": "86400s",
