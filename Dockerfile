@@ -50,12 +50,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     arc-theme papirus-icon-theme dmz-cursor-theme \
     # Fonts
     fonts-inter fonts-noto fonts-noto-color-emoji fonts-dejavu-core \
-    # Browser
-    chromium-browser fonts-liberation libnss3 libxss1 libasound2 \
+    # Browser dependencies (Chrome installed separately - Ubuntu's chromium is snap-only)
+    fonts-liberation libnss3 libxss1 libasound2 libatk-bridge2.0-0 libgtk-3-0 \
     # Process management & audio
     supervisor dbus dbus-x11 pulseaudio \
     && locale-gen en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Google Chrome (Ubuntu's chromium-browser is snap-only, doesn't work in Docker)
+RUN curl -fsSL https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o /tmp/chrome.deb && \
+    apt-get update && \
+    apt-get install -y /tmp/chrome.deb && \
+    rm /tmp/chrome.deb && \
+    rm -rf /var/lib/apt/lists/*
 
 # =============================================================================
 # Create User
