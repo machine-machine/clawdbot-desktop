@@ -29,6 +29,7 @@ PERSIST_CONFIGS=(
     "/home/developer/.config/xfce4:xfce4"
     "/home/developer/.config/plank:plank"
     "/home/developer/.config/autostart:autostart"
+    "/home/developer/Desktop:Desktop"
 )
 
 for config_pair in "${PERSIST_CONFIGS[@]}"; do

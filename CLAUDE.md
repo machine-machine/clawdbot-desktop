@@ -59,7 +59,8 @@ Browser → Guacamole-Lite (8080) → guacd (4822) → x11vnc (5900) → Xorg :0
 ```bash
 # Local development (no GPU, software encoding)
 docker compose -f docker-compose.local.yml up -d
-# Access: http://localhost:8080
+# Access Guacamole-Lite: http://localhost:8080
+# Access Full Guacamole: http://localhost:8888/guacamole (login: guacadmin/guacadmin)
 
 # Production (with GPU for desktop apps)
 docker compose up -d
@@ -149,9 +150,11 @@ The deployment uses **Cloudflare Tunnel** for HTTPS access:
 | Project | `machine.machine` |
 | Application UUID | `zw4sw440w8k80g0s8cw44kkc` |
 | Container Name Pattern | `clawdbot-desktop-worker-zw4sw440w8k80g0s8cw44kkc-*` |
-| Desktop Port | 8080 (Guacamole HTML5) |
+| Guacamole-Lite Port | 8080 (lightweight HTML5 client) |
+| Full Guacamole Port | 8888 (official Tomcat client) |
 | Gateway Port | 18789 (Clawdbot WebSocket) |
-| External URL | `https://g1.machinemachine.ai` (via Cloudflare Tunnel) |
+| External URL (Lite) | `https://g1.machinemachine.ai` (via Cloudflare Tunnel) |
+| External URL (Full) | `https://g2.machinemachine.ai/guacamole` (via Cloudflare Tunnel) |
 | Coolify URL | `https://cool.machinemachine.ai/project/q8w4cwskgwkgg0cg00k00coo/environment/tkgkkwc0w0cso4ooc48848c4/application/zw4sw440w8k80g0s8cw44kkc` |
 
 ### Deployment Workflow
@@ -208,7 +211,8 @@ docker exec -it $(docker ps -q --filter "name=clawdbot-desktop-worker") bash
 ### Port Mapping
 
 The docker-compose.yml uses Traefik labels for routing:
-- Desktop domain → port **8080** (Guacamole HTML5)
+- g1.machinemachine.ai → port **8080** (Guacamole-Lite HTML5)
+- g2.machinemachine.ai → port **8888** (Full Apache Guacamole)
 - Gateway domain → port **18789** (Clawdbot API)
 
 ## Persistent Desktop Settings
@@ -223,6 +227,7 @@ On container startup, `entrypoint.sh` creates symlinks from the normal config lo
 /home/developer/.config/xfce4/    → /clawdbot_home/desktop-config/xfce4/
 /home/developer/.config/plank/    → /clawdbot_home/desktop-config/plank/
 /home/developer/.config/autostart/ → /clawdbot_home/desktop-config/autostart/
+/home/developer/Desktop/          → /clawdbot_home/desktop-config/Desktop/
 ```
 
 ### Resetting to Defaults
@@ -253,12 +258,59 @@ Cargstore is an Electron-based app store for installing Flatpak applications. It
 
 ```
 /clawdbot_home/
-├── desktop-config/             (XFCE, Plank, autostart settings)
+├── desktop-config/             (XFCE, Plank, autostart, desktop icons)
 │   ├── xfce4/                  (symlinked from ~/.config/xfce4/)
 │   ├── plank/                  (symlinked from ~/.config/plank/)
-│   └── autostart/              (symlinked from ~/.config/autostart/)
+│   ├── autostart/              (symlinked from ~/.config/autostart/)
+│   └── Desktop/                (symlinked from ~/Desktop/)
 └── flatpak/                    (symlinked from ~/.local/share/flatpak/)
 ```
+
+## Full Apache Guacamole (Alternative)
+
+In addition to guacamole-lite, the docker-compose includes the **full Apache Guacamole** stack as an alternative. This provides the official Java/Tomcat web client with user management, connection history, and more features.
+
+### Architecture (Full Guacamole)
+
+```
+Browser → Guacamole Full (8888) → guacd (4822) → x11vnc (5900) → Xorg :0
+          (Java/Tomcat)          (in worker)    (in worker)
+```
+
+### Services
+
+| Service | Container | Port | Purpose |
+|---------|-----------|------|---------|
+| guacamole-db | MariaDB | 3306 (internal) | User/connection database |
+| guacamole-full | Tomcat | 8888 (external 8080 internal) | Official web UI |
+
+### Access
+
+- **Local**: http://localhost:8888/guacamole
+- **Production**: https://g2.machinemachine.ai/guacamole
+- **Default login**: guacadmin / guacadmin (change immediately!)
+
+### Pre-configured Connection
+
+The database init script creates a default VNC connection:
+- **Name**: Clawdbot Desktop
+- **Protocol**: VNC
+- **Host**: clawdbot-desktop-worker:5900
+- **Password**: clawdbot (from VNC_PASSWORD)
+
+### Guacamole-Lite vs Full Guacamole
+
+| Feature | Guacamole-Lite (8080) | Full Guacamole (8888) |
+|---------|----------------------|----------------------|
+| User management | None (token-based) | Full (DB-backed) |
+| Connection history | No | Yes |
+| Session recording | No | Yes |
+| File transfer | Limited | Full SFTP support |
+| Multi-user sharing | Yes | Yes (with sharing profiles) |
+| Memory footprint | ~50MB (Node.js) | ~500MB (Tomcat/Java) |
+| Startup time | Fast | Slower (JVM warmup) |
+
+Use **guacamole-lite** for simple, fast access. Use **full Guacamole** when you need user management, audit logs, or session recording.
 
 ## Comparison: Guacamole vs Selkies
 
