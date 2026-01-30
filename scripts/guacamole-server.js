@@ -93,7 +93,7 @@ app.get('/api/token', (req, res) => {
                 'enable-audio': false,
                 'resize-method': 'display-update',
                 'color-depth': 16,
-                'cursor': 'local',
+                'cursor': 'remote',
                 'clipboard-encoding': 'UTF-8',
                 'swap-red-blue': false,
             }
