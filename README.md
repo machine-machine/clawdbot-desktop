@@ -1,187 +1,148 @@
-# clawdbot-desktop
+# M2 Desktop
 
-GPU-enabled Dockerized XFCE4 desktop that runs Clawdbot Gateway and exposes a web-based VNC (noVNC) session and Clawdbot UI via Coolify and an external reverse proxy.
+A containerized Linux desktop accessible from any browser. Three remote desktop technologies to choose from based on your needs.
 
-## Features
+## Quick Start
 
-- **Persistent AI Worker PC** - Full Linux XFCE4 desktop inside a container, remotely accessible from any browser
-- **Clawdbot Gateway** - Installed and running as a daemon with persistent configuration
-- **GPU Access** - NVIDIA Container Toolkit support for ML/AI workloads
-- **Web-based VNC** - Access the desktop via noVNC (HTML5) - no client installation required
-- **Lightweight Desktop** - XFCE4 uses ~300MB RAM, optimized for VNC (compositing disabled)
+```bash
+# Start the desktop (Guacamole - default)
+docker compose up -d
+
+# Open in browser
+open http://localhost:8080
+
+# Login: developer / m2desktop
+```
+
+## Choose Your Variant
+
+| | noVNC | Guacamole | Selkies |
+|---|:---:|:---:|:---:|
+| **Best for** | Simple setup | Collaboration | Performance |
+| **Multi-user** | - | Yes | - |
+| **Latency** | ~100ms | ~70ms | ~20ms |
+| **Encoding** | CPU | CPU | GPU |
+| **Port** | 6080 | 8080 | 8080 |
+
+```bash
+# noVNC - Simple VNC-to-web proxy
+docker compose -f docker-compose.novnc.yml up -d
+
+# Guacamole - Multi-user sessions (default)
+docker compose up -d
+
+# Selkies - Low-latency WebRTC (requires GPU)
+docker compose -f docker-compose.selkies.yml up -d
+```
+
+## What's Included
+
+- **XFCE Desktop** with WhiteSur macOS theme
+- **Plank dock** for quick app launching
+- **Google Chrome** pre-installed
+- **Cargstore** app store for Flatpak apps
+- **M2 Gateway** AI agent interface (port 18789)
+- **Persistent storage** - settings survive container restarts
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│  Coolify (Deployment & Reverse Proxy)       │
-├─────────────────────────────────────────────┤
-│  Docker Container (clawdbot-desktop-worker) │
-│                                             │
-│  Supervisord (Process Manager)              │
-│  ├── XFCE4 Session (:1 display)             │
-│  ├── TigerVNC Server (localhost:5901)       │
-│  ├── noVNC/websockify (0.0.0.0:6080)        │
-│  └── Clawdbot Daemon (0.0.0.0:18789)        │
-│                                             │
-│  Volumes:                                   │
-│  ├── /clawdbot_home (config & state)        │
-│  └── /workspace (workspace data)            │
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│  Docker Container                            │
+│                                              │
+│  ┌─────────┐   ┌─────────┐   ┌──────────┐   │
+│  │  Xorg   │ → │  XFCE4  │ → │  Plank   │   │
+│  │ :0/:1   │   │ Desktop │   │  Dock    │   │
+│  └────┬────┘   └─────────┘   └──────────┘   │
+│       │                                      │
+│       ▼                                      │
+│  ┌─────────────────────────────────────┐    │
+│  │  Remote Access (variant-specific)   │    │
+│  │  • Guacamole: x11vnc → guacd → web  │    │
+│  │  • noVNC: TigerVNC → websockify     │    │
+│  │  • Selkies: GStreamer → WebRTC      │    │
+│  └─────────────────────────────────────┘    │
+│                                              │
+│  Ports: 8080 (web) | 18789 (M2 Gateway)     │
+└──────────────────────────────────────────────┘
 ```
 
-## Prerequisites
+## Configuration
 
-- Docker with Docker Compose
-- NVIDIA Container Toolkit (for GPU support)
-- Coolify (for deployment) or any reverse proxy
-
-## Quick Start
-
-### Local Development (without GPU)
-
-A separate compose file is provided for local testing on machines without NVIDIA GPUs:
-
-```bash
-# Clone the repository
-git clone git@github.com:machine-machine/clawdbot-desktop.git
-cd clawdbot-desktop
-
-# Build and run locally (no GPU required)
-docker compose -f docker-compose.local.yml up -d
-```
-
-Access:
-- **noVNC Desktop**: http://localhost:6080/vnc.html (password: `clawdbot`)
-- **Clawdbot Gateway**: ws://localhost:18789
-
-### Production Deployment (with GPU)
-
-```bash
-# Build the image
-docker compose build
-
-# Run (requires NVIDIA Container Toolkit)
-docker compose up -d
-```
-
-### Coolify Deployment with Traefik
-
-The docker-compose.yml includes Traefik labels for automatic routing. Configure two subdomains:
-
-1. Connect the GitHub repository in Coolify
-2. Select **Docker Compose** build pack
-3. Configure environment variables:
-   - `VNC_DOMAIN` - Domain for noVNC (e.g., `vnc.yourdomain.com`)
-   - `GATEWAY_DOMAIN` - Domain for Clawdbot Gateway (e.g., `gateway.yourdomain.com`)
-   - `VNC_PASSWORD` - VNC connection password (default: `clawdbot`)
-   - `ANTHROPIC_API_KEY` - Your Anthropic API key
-   - `OPENAI_API_KEY` - Your OpenAI API key (optional)
-4. Configure storage volumes:
-   - `clawdbot_home` - Clawdbot configuration and state
-   - `clawdbot_workspace` - Workspace data
-5. Deploy
-
-Access after deployment:
-- **noVNC Desktop**: `https://vnc.yourdomain.com/vnc.html`
-- **Clawdbot Gateway**: `wss://gateway.yourdomain.com`
-
-Both services support WebSocket connections through Traefik.
-
-## Environment Variables
+### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VNC_DOMAIN` | `vnc.localhost` | Domain for noVNC (Traefik routing) |
-| `GATEWAY_DOMAIN` | `gateway.localhost` | Domain for Clawdbot Gateway (Traefik routing) |
-| `VNC_PASSWORD` | `clawdbot` | VNC connection password |
-| `CLAWDBOT_HOME` | `/clawdbot_home` | Clawdbot data directory |
-| `WORKSPACE` | `/workspace` | Workspace directory |
-| `ANTHROPIC_API_KEY` | - | Anthropic API key for Clawdbot |
-| `OPENAI_API_KEY` | - | OpenAI API key for Clawdbot |
+| `VNC_PASSWORD` | `m2desktop` | Web login password |
+| `ANTHROPIC_API_KEY` | - | For M2 Gateway AI features |
 
-## Exposed Ports
+### Persistent Storage
 
-| Port | Service | Description |
-|------|---------|-------------|
-| 6080 | noVNC | Web-based VNC interface |
-| 18789 | Clawdbot | Clawdbot UI and API gateway |
+Desktop settings persist across restarts in `/m2_home/`:
+
+```
+/m2_home/
+├── desktop-config/    # XFCE, Plank, autostart
+└── flatpak/           # Installed Flatpak apps
+```
+
+Reset to defaults:
+```bash
+docker compose exec m2-desktop-worker rm -rf /m2_home/desktop-config
+docker compose restart
+```
+
+## Multi-User Sessions
+
+The Guacamole variant supports multiple simultaneous users:
+
+- Share the URL with collaborators
+- Everyone sees the same desktop
+- All users can control mouse/keyboard
+- Real-time synchronized view
+
+Use cases: pair programming, remote assistance, demos.
 
 ## GPU Support
 
-The container is configured to use NVIDIA GPUs via the NVIDIA Container Toolkit. Verify GPU access:
+For Selkies variant or GPU-accelerated apps:
 
 ```bash
-docker compose exec clawdbot-desktop-worker nvidia-smi
+# Requires: NVIDIA GPU + Driver 525+ + Container Toolkit
+docker compose exec m2-desktop-worker nvidia-smi
 ```
 
-### Troubleshooting GPU Access
-
-1. Ensure NVIDIA Container Toolkit is installed on the host:
-   ```bash
-   nvidia-ctk --version
-   ```
-
-2. Verify Docker can see the GPU:
-   ```bash
-   docker run --rm --gpus all nvidia/cuda:12.4.1-runtime-ubuntu22.04 nvidia-smi
-   ```
-
-3. If using Docker Compose without GPU support, uncomment the `runtime: nvidia` line in `docker-compose.yml`
-
-## Sandbox Configuration
-
-For Clawdbot sandboxed tool containers, optionally mount the Docker socket:
-
-```yaml
-volumes:
-  - /var/run/docker.sock:/var/run/docker.sock
-```
-
-A sample sandbox configuration is provided in `config/clawdbot.config.sample.json`.
-
-## Clawdbot Onboarding
-
-On first access, configure Clawdbot via the CLI inside the container:
+## Service Management
 
 ```bash
-docker compose exec clawdbot-desktop-worker clawdbot setup
-docker compose exec clawdbot-desktop-worker clawdbot configure
+# Check services
+docker compose exec m2-desktop-worker supervisorctl status
+
+# Restart desktop
+docker compose exec m2-desktop-worker supervisorctl restart xfce4
+
+# View logs
+docker compose exec m2-desktop-worker tail -f /var/log/guacamole.log
 ```
 
-Or use the interactive onboarding wizard:
+## Full Apache Guacamole
+
+The default compose includes optional enterprise Guacamole (port 8888):
+
+- User management and authentication
+- Connection history and audit logs
+- Session recording
+
+Default login: `guacadmin / guacadmin`
+
+## Building
 
 ```bash
-docker compose exec clawdbot-desktop-worker clawdbot onboard
+# Build specific variant
+docker build -f Dockerfile.guacamole -t m2-desktop:guacamole .
+docker build -f Dockerfile.novnc -t m2-desktop:novnc .
+docker build -f Dockerfile.selkies -t m2-desktop:selkies .
 ```
-
-### Using Claude Max (No API Key Required)
-
-If you have a Claude Max subscription, you can use browser-based auth instead of API keys:
-
-1. Connect to the VNC desktop (`https://vnc.yourdomain.com/vnc.html`)
-2. Open a terminal in the XFCE4 desktop (Terminal shortcut on desktop)
-3. Run `clawdbot browser` to launch the managed Chromium browser
-4. Log into `claude.ai` with your Claude Max account
-5. Clawdbot will use your browser session for Claude interactions
-
-This avoids API costs entirely - you use your unlimited Claude Max subscription.
-
-## Desktop Environment
-
-XFCE4 is used for its lightweight footprint and VNC compatibility:
-
-- **Memory usage**: ~300MB (vs ~1.5GB for GNOME)
-- **Compositing**: Disabled for optimal VNC performance
-- **Included apps**: xfce4-terminal, Thunar file manager, mousepad text editor, Chromium browser
-- **Desktop shortcuts**: Terminal, Chromium Browser, Workspace folder
-
-## Resource Requirements
-
-- **CPU**: 4+ vCPU recommended
-- **RAM**: 4-8 GB recommended (XFCE4 uses ~300MB)
-- **GPU**: NVIDIA GPU(s) - configured to use all available GPUs
-- **Storage**: Sufficient for volumes
 
 ## License
 

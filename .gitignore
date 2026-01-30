@@ -10,3 +10,10 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# PM
+
+.docs/
+
+_bmad
+
