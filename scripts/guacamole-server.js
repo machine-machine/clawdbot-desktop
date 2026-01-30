@@ -135,7 +135,6 @@ app.get('/', (req, res) => {
         #display {
             width: 100%;
             height: 100%;
-            cursor: none;
         }
         #display canvas {
             z-index: 1 !important;
