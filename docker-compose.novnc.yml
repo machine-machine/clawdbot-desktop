@@ -38,9 +38,9 @@ services:
     shm_size: '2gb'
     privileged: true
 
-    ports:
-      - "6080:6080"   # noVNC HTML5
-      - "18789:18789" # M2 Gateway
+    # ports:  # Uncomment for standalone use (Coolify uses Traefik labels)
+    #   - "${NOVNC_PORT:-26080}:6080"     # noVNC HTML5
+    #   - "${M2_GATEWAY_PORT:-18789}:18789" # M2 Gateway
 
     volumes:
       - m2_home:/m2_home

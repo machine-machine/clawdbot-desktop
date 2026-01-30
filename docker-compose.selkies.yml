@@ -50,9 +50,9 @@ services:
               count: all
               capabilities: ["gpu", "compute", "utility", "video"]
 
-    ports:
-      - "8080:8080"   # Selkies WebRTC
-      - "18789:18789" # M2 Gateway
+    # ports:  # Uncomment for standalone use (Coolify uses Traefik labels)
+    #   - "${SELKIES_PORT:-28080}:8080"   # Selkies WebRTC
+    #   - "${M2_GATEWAY_PORT:-18789}:18789" # M2 Gateway
 
     volumes:
       - m2_home:/m2_home

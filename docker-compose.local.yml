@@ -28,8 +28,8 @@ services:
     shm_size: '1gb'
 
     ports:
-      - "8080:8080"   # Guacamole-Lite HTML5
-      - "18789:18789" # M2 Gateway
+      - "${GUAC_LITE_PORT:-28080}:8080"   # Guacamole-Lite HTML5
+      - "${M2_GATEWAY_PORT:-18789}:18789" # M2 Gateway
 
     volumes:
       - m2_home_local:/m2_home
@@ -44,7 +44,7 @@ services:
 
   # =============================================================================
   # Full Apache Guacamole Stack (optional)
-  # Access via localhost:8888/guacamole
+  # Access via localhost:28888
   # Default login: guacadmin / guacadmin
   # =============================================================================
 
@@ -87,7 +87,7 @@ services:
       # Serve at / instead of /guacamole
       WEBAPP_CONTEXT: ROOT
     ports:
-      - "8888:8080"   # Full Guacamole UI
+      - "${GUAC_FULL_PORT:-28888}:8080"   # Full Guacamole UI
 
 volumes:
   m2_home_local:

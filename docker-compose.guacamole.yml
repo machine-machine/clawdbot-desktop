@@ -41,9 +41,9 @@ services:
     shm_size: '2gb'
     privileged: true
 
-    ports:
-      - "8080:8080"   # Guacamole-Lite HTML5
-      - "18789:18789" # M2 Gateway
+    # ports:  # Uncomment for standalone use (Coolify uses Traefik labels)
+    #   - "${GUAC_LITE_PORT:-28080}:8080"   # Guacamole-Lite HTML5
+    #   - "${M2_GATEWAY_PORT:-18789}:18789" # M2 Gateway
 
     volumes:
       - m2_home:/m2_home
@@ -94,8 +94,8 @@ services:
       MYSQL_PASSWORD: ${GUAC_DB_PASSWORD:-guacamole_pass}
       # Serve at / instead of /guacamole
       WEBAPP_CONTEXT: ROOT
-    ports:
-      - "8888:8080"   # Full Guacamole UI
+    # ports:  # Uncomment for standalone use
+    #   - "${GUAC_FULL_PORT:-28888}:8080" # Full Guacamole UI
 
 volumes:
   m2_home:
