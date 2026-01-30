@@ -175,7 +175,7 @@ noVNC and Selkies are single-user only.
 | Full Guacamole Port | 8888 |
 | M2 Gateway Port | 18789 |
 | External URL (Lite) | `https://g1.machinemachine.ai` |
-| External URL (Full) | `https://g2.machinemachine.ai/guacamole` |
+| External URL (Full) | `https://g2.machinemachine.ai` |
 
 **Deployment Workflow:**
 
@@ -262,7 +262,7 @@ The docker-compose files include optional Full Guacamole services:
 - **guacamole-db**: MariaDB for user/connection storage
 - **guacamole-full**: Official Tomcat-based Guacamole
 
-Access at port 8888 with default login `guacadmin/guacadmin`.
+Access at `http://localhost:8888` with default login `guacadmin/guacadmin`.
 
 Features over guacamole-lite:
 - User management

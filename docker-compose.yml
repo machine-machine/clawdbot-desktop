@@ -111,6 +111,9 @@ services:
       MYSQL_USER: guacamole_user
       MYSQL_PASSWORD: ${GUAC_DB_PASSWORD:-guacamole_pass}
 
+      # Serve at / instead of /guacamole
+      WEBAPP_CONTEXT: ROOT
+
     labels:
       - traefik.enable=true
       # Route to Guacamole Full on port 8888 (internally 8080)

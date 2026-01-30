@@ -133,7 +133,7 @@ The default compose includes optional enterprise Guacamole (port 8888):
 - Connection history and audit logs
 - Session recording
 
-Default login: `guacadmin / guacadmin`
+Access at `http://localhost:8888` with login `guacadmin / guacadmin`
 
 ## Building
 

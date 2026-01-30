@@ -92,6 +92,8 @@ services:
       MYSQL_DATABASE: guacamole_db
       MYSQL_USER: guacamole_user
       MYSQL_PASSWORD: ${GUAC_DB_PASSWORD:-guacamole_pass}
+      # Serve at / instead of /guacamole
+      WEBAPP_CONTEXT: ROOT
     ports:
       - "8888:8080"   # Full Guacamole UI
 
