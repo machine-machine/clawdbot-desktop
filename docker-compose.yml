@@ -56,7 +56,7 @@ services:
       # Route to Guacamole on port 8080
       - traefik.http.services.clawdbot-desktop-worker.loadbalancer.server.port=8080
       # HTTP router (Cloudflare handles HTTPS)
-      - traefik.http.routers.clawdbot-desktop.rule=Host(`m2.machinemachine.ai`)
+      - traefik.http.routers.clawdbot-desktop.rule=Host(`g1.machinemachine.ai`)
       - traefik.http.routers.clawdbot-desktop.entrypoints=http
       - traefik.http.routers.clawdbot-desktop.service=clawdbot-desktop-worker
       # WebSocket: Traefik handles upgrades automatically, no middleware needed

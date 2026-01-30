@@ -45,12 +45,14 @@ Browser → Guacamole-Lite (8080) → guacd (4822) → x11vnc (5900) → Xorg :0
 
 **Key Components:**
 - Base Image: Ubuntu 22.04
-- Remote Desktop: Apache Guacamole (guacd + guacamole-lite)
+- Remote Desktop: **guacamole-lite** (Node.js) + guacd (C daemon)
 - VNC Server: x11vnc (shares existing X11 display)
 - Desktop: XFCE4 with WhiteSur macOS-style theme + Plank dock
 - Display: Xorg with dummy driver at 1920x1080
 - Process Manager: Supervisord
 - AI Agent: Clawdbot Gateway (Node.js 22.x)
+
+**Note:** This uses **guacamole-lite** (a lightweight Node.js WebSocket server), NOT the full Apache Guacamole (Tomcat/Java). The WebSocket endpoint is `/websocket`, not `/guacamole/websocket-tunnel`.
 
 ## Build and Run
 
@@ -131,7 +133,7 @@ The deployment uses **Cloudflare Tunnel** for HTTPS access:
 ┌─────────────┐                         ┌─────────────────┐
 │   Browser   │──── WebSocket ─────────▶│ Cloudflare      │──▶ Coolify/Guacamole
 │   Client    │                         │ Tunnel          │    (port 8080)
-│             │                         │ m2.machinemachine.ai
+│             │                         │ g1.machinemachine.ai
 └─────────────┘                         └─────────────────┘
 ```
 
@@ -149,7 +151,7 @@ The deployment uses **Cloudflare Tunnel** for HTTPS access:
 | Container Name Pattern | `clawdbot-desktop-worker-t44s0oww0sc4koko88ocs84w-*` |
 | Desktop Port | 8080 (Guacamole HTML5) |
 | Gateway Port | 18789 (Clawdbot WebSocket) |
-| External URL | `https://m2.machinemachine.ai` (via Cloudflare Tunnel) |
+| External URL | `https://g1.machinemachine.ai` (via Cloudflare Tunnel) |
 
 ### Deployment Workflow
 
