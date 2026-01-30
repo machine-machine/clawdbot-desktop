@@ -697,17 +697,21 @@ INSERT INTO guacamole_connection_parameter (connection_id, parameter_name, param
 SELECT connection_id, 'enable-sftp', 'false'
 FROM guacamole_connection WHERE connection_name = 'Clawdbot Desktop';
 
--- Set display resolution
+-- Display settings: auto-fit to browser window
 INSERT INTO guacamole_connection_parameter (connection_id, parameter_name, parameter_value)
-SELECT connection_id, 'width', '1920'
+SELECT connection_id, 'resize-method', 'display-update'
 FROM guacamole_connection WHERE connection_name = 'Clawdbot Desktop';
 
 INSERT INTO guacamole_connection_parameter (connection_id, parameter_name, parameter_value)
-SELECT connection_id, 'height', '1080'
+SELECT connection_id, 'color-depth', '32'
 FROM guacamole_connection WHERE connection_name = 'Clawdbot Desktop';
 
 INSERT INTO guacamole_connection_parameter (connection_id, parameter_name, parameter_value)
-SELECT connection_id, 'color-depth', '24'
+SELECT connection_id, 'cursor', 'remote'
+FROM guacamole_connection WHERE connection_name = 'Clawdbot Desktop';
+
+INSERT INTO guacamole_connection_parameter (connection_id, parameter_name, parameter_value)
+SELECT connection_id, 'autoretry', '3'
 FROM guacamole_connection WHERE connection_name = 'Clawdbot Desktop';
 
 -- Grant guacadmin full access to the connection
