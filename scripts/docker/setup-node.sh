@@ -18,6 +18,10 @@ rm -rf /var/lib/apt/lists/*
 node --version
 npm --version
 
+# Install Claude Code CLI
+echo "=== Installing Claude Code ==="
+curl -fsSL https://claude.ai/install.sh | bash
+
 # Install OpenClaw Gateway
 echo "=== Installing OpenClaw Gateway ==="
 npm install -g openclaw@latest
