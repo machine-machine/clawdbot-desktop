@@ -1,0 +1,39 @@
+/*
+ * M2 Desktop - Guacamole Display Fixes
+ * Fixes: pixel buffer showing, initial zoom, display overflow
+ */
+
+/* Hide any extra canvas layers that shouldn't be visible */
+.display .guac-display canvas:not(:first-of-type) {
+    display: none !important;
+}
+
+/* Ensure display container doesn't overflow */
+#display,
+.display,
+.client-display {
+    overflow: hidden !important;
+    max-height: 100vh !important;
+    max-width: 100vw !important;
+}
+
+/* Main viewport constraints */
+.guac-viewport {
+    overflow: hidden !important;
+}
+
+/* Prevent the display from growing beyond viewport */
+.guac-display {
+    overflow: hidden !important;
+}
+
+/* Fix for display wrapper */
+.display-wrapper {
+    overflow: hidden !important;
+    height: 100vh !important;
+}
+
+/* Hide scrollbars on body during session */
+body.in-session {
+    overflow: hidden !important;
+}

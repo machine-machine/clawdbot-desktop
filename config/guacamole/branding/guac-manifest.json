@@ -1,0 +1,12 @@
+{
+    "guacamoleVersion": "1.5.5",
+    "name": "M2 Desktop Branding",
+    "namespace": "m2-branding",
+    "html": {
+        "HEAD": ["branding/head.html"]
+    },
+    "resources": {
+        "styles.css": "text/css",
+        "scripts.js": "application/javascript"
+    }
+}

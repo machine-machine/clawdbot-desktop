@@ -108,6 +108,15 @@ services:
       # Enable reverse proxy support (for X-Forwarded-* headers)
       REMOTE_IP_VALVE_ENABLED: "true"
 
+      # WebSocket keepalive - prevent Cloudflare 100s idle timeout
+      CATALINA_OPTS: >-
+        -Dorg.apache.tomcat.websocket.DEFAULT_BUFFER_SIZE=8192
+        -Dorg.apache.tomcat.websocket.BLOCKING_SEND_TIMEOUT=20000
+        -Dorg.apache.catalina.session.StandardSession.ACTIVITY_CHECK=true
+
+    volumes:
+      - ./config/guacamole/m2-branding.jar:/etc/guacamole/extensions/m2-branding.jar:ro
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
