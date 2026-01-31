@@ -3,6 +3,10 @@
 .env.local
 .env.*.local
 
+# Claude Code
+.agent/
+.claude/
+
 # Editor
 .vscode/
 .idea/
