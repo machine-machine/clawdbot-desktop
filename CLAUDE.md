@@ -145,13 +145,17 @@ docker compose exec m2-desktop-worker supervisorctl restart guacamole
 
 ```
 /m2_home/                          # Volume mount (ALL variants)
-├── desktop-config/
-│   ├── xfce4/                     # Symlinked from ~/.config/xfce4
-│   ├── plank/                     # Symlinked from ~/.config/plank
-│   ├── autostart/                 # Symlinked from ~/.config/autostart
-│   └── Desktop/                   # Symlinked from ~/Desktop
-└── flatpak/                       # Symlinked from ~/.local/share/flatpak
+├── home/                          # Entire /home/developer (symlinked)
+│   ├── .config/                   # All user configs
+│   ├── .local/bin/                # User-installed binaries (in PATH)
+│   ├── .claude/                   # Claude Code CLI config
+│   ├── Desktop/                   # Desktop icons
+│   └── ...                        # Everything else in home folder
+├── flatpak/                       # Symlinked from ~/.local/share/flatpak
+└── openclaw/                      # OpenClaw config
 ```
+
+**Note:** The entire home directory persists across container rebuilds. Any tools you install (Claude Code, pip packages, npm globals, etc.) will survive rebuilds.
 
 ## Multi-User Sessions (Guacamole Only)
 
@@ -214,15 +218,15 @@ docker exec -it $(docker ps -q --filter "name=m2-desktop-worker") bash
 | Auth issues | Can't login | Check VNC_PASSWORD env var |
 | WebSocket error | Browser console errors | Check Traefik WebSocket config |
 
-## Resetting Desktop Settings
+## Resetting Home Directory
 
 ```bash
 CONTAINER=$(docker ps -q --filter "name=m2-desktop-worker")
 
-# Reset all desktop settings
-docker exec $CONTAINER rm -rf /m2_home/desktop-config
+# Reset entire home directory (WARNING: deletes all user data)
+docker exec $CONTAINER rm -rf /m2_home/home
 
-# Restart container to reinitialize
+# Restart container to reinitialize from defaults
 docker restart $CONTAINER
 ```
 

@@ -30,43 +30,36 @@ chown messagebus:messagebus /var/run/dbus 2>/dev/null || chown root:root /var/ru
 chown -R developer:developer ${M2_HOME} ${WORKSPACE} 2>/dev/null || true
 
 # =============================================================================
-# Persistent Desktop Config (survives container rebuilds)
+# Persistent Home Directory (survives container rebuilds)
 # =============================================================================
-DESKTOP_CONFIG="${M2_HOME}/desktop-config"
-mkdir -p "${DESKTOP_CONFIG}"
+PERSISTENT_HOME="${M2_HOME}/home"
 
-# List of config directories to persist
-PERSIST_CONFIGS=(
-    "/home/developer/.config/xfce4:xfce4"
-    "/home/developer/.config/plank:plank"
-    "/home/developer/.config/autostart:autostart"
-    "/home/developer/Desktop:Desktop"
-)
+if [ ! -d "${PERSISTENT_HOME}" ]; then
+    # First run: copy entire home folder to persistent storage
+    echo "Initializing persistent home directory..."
+    mkdir -p "${PERSISTENT_HOME}"
+    # Copy all contents including hidden files
+    cp -a /home/developer/. "${PERSISTENT_HOME}/"
+    echo "Home directory initialized at ${PERSISTENT_HOME}"
+else
+    echo "Using existing persistent home at ${PERSISTENT_HOME}"
+fi
 
-for config_pair in "${PERSIST_CONFIGS[@]}"; do
-    SRC="${config_pair%%:*}"
-    NAME="${config_pair##*:}"
-    PERSIST_DIR="${DESKTOP_CONFIG}/${NAME}"
+# Remove original home and symlink to persistent storage
+rm -rf /home/developer
+ln -sf "${PERSISTENT_HOME}" /home/developer
+chown -h developer:developer /home/developer
+chown -R developer:developer "${PERSISTENT_HOME}"
 
-    if [ ! -d "${PERSIST_DIR}" ]; then
-        # First run: copy defaults from container to persistent storage
-        echo "Initializing persistent ${NAME} config..."
-        if [ -d "${SRC}" ]; then
-            cp -a "${SRC}" "${PERSIST_DIR}"
-        else
-            mkdir -p "${PERSIST_DIR}"
-        fi
-    fi
+# Ensure ~/.local/bin exists and is in PATH
+mkdir -p "${PERSISTENT_HOME}/.local/bin"
+if ! grep -q 'HOME/.local/bin' "${PERSISTENT_HOME}/.bashrc" 2>/dev/null; then
+    echo '' >> "${PERSISTENT_HOME}/.bashrc"
+    echo '# User local binaries' >> "${PERSISTENT_HOME}/.bashrc"
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "${PERSISTENT_HOME}/.bashrc"
+fi
 
-    # Symlink container path to persistent storage
-    rm -rf "${SRC}"
-    mkdir -p "$(dirname "${SRC}")"
-    ln -sf "${PERSIST_DIR}" "${SRC}"
-    chown -h developer:developer "${SRC}"
-done
-
-chown -R developer:developer "${DESKTOP_CONFIG}"
-echo "Desktop settings persistent at ${DESKTOP_CONFIG}"
+echo "Home directory persistent at ${PERSISTENT_HOME}"
 
 # =============================================================================
 # Persistent Flatpak Directory
