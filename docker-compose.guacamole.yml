@@ -81,10 +81,8 @@ services:
     container_name: guacamole-full
     restart: unless-stopped
     depends_on:
-      guacamole-db:
-        condition: service_healthy
-      m2-desktop-worker:
-        condition: service_healthy
+      - guacamole-db
+      - m2-desktop-worker
     environment:
       GUACD_HOSTNAME: m2-desktop-worker
       GUACD_PORT: 4822
@@ -95,6 +93,12 @@ services:
       MYSQL_PASSWORD: ${GUAC_DB_PASSWORD:-guacamole_pass}
       # Serve at / instead of /guacamole
       WEBAPP_CONTEXT: ROOT
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     # ports:  # Uncomment for standalone use
     #   - "${GUAC_FULL_PORT:-28888}:8080" # Full Guacamole UI
 
