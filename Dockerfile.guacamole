@@ -4,9 +4,11 @@
 #
 # Architecture:
 #   Browser -> Full Guacamole (separate container) -> guacd (4822) -> x11vnc (5900) -> Xorg :0
+#
+# Base image: NVIDIA CUDA runtime for GPU-accelerated desktop applications
 # =============================================================================
 
-FROM ubuntu:22.04
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
 # Build args
 ARG DEBIAN_FRONTEND=noninteractive
@@ -81,9 +83,14 @@ ENV CARGSTORE_VERSION=${CARGSTORE_VERSION}
 RUN /tmp/docker/setup-flatpak.sh
 
 # =============================================================================
-# Install Node.js + M2 Gateway
+# Install Node.js + M2 Gateway + Claude Code
 # =============================================================================
 RUN /tmp/docker/setup-node.sh
+
+# =============================================================================
+# Install Homebrew
+# =============================================================================
+RUN /tmp/docker/setup-homebrew.sh
 
 # =============================================================================
 # Install WhiteSur Theme

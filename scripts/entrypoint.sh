@@ -30,36 +30,37 @@ chown messagebus:messagebus /var/run/dbus 2>/dev/null || chown root:root /var/ru
 chown -R developer:developer ${M2_HOME} ${WORKSPACE} 2>/dev/null || true
 
 # =============================================================================
-# Persistent Home Directory (survives container rebuilds)
+# Persistent /home Directory (survives container rebuilds)
 # =============================================================================
 PERSISTENT_HOME="${M2_HOME}/home"
 
 if [ ! -d "${PERSISTENT_HOME}" ]; then
-    # First run: copy entire home folder to persistent storage
-    echo "Initializing persistent home directory..."
+    # First run: copy entire /home folder to persistent storage
+    echo "Initializing persistent /home directory..."
     mkdir -p "${PERSISTENT_HOME}"
     # Copy all contents including hidden files
-    cp -a /home/developer/. "${PERSISTENT_HOME}/"
-    echo "Home directory initialized at ${PERSISTENT_HOME}"
+    cp -a /home/. "${PERSISTENT_HOME}/"
+    echo "/home directory initialized at ${PERSISTENT_HOME}"
 else
-    echo "Using existing persistent home at ${PERSISTENT_HOME}"
+    echo "Using existing persistent /home at ${PERSISTENT_HOME}"
 fi
 
-# Remove original home and symlink to persistent storage
-rm -rf /home/developer
-ln -sf "${PERSISTENT_HOME}" /home/developer
-chown -h developer:developer /home/developer
-chown -R developer:developer "${PERSISTENT_HOME}"
+# Remove original /home and symlink to persistent storage
+rm -rf /home
+ln -sf "${PERSISTENT_HOME}" /home
+chown -h root:root /home
+chown -R developer:developer /home/developer
+chown -R root:root /home/linuxbrew 2>/dev/null || true
 
 # Ensure ~/.local/bin exists and is in PATH
-mkdir -p "${PERSISTENT_HOME}/.local/bin"
-if ! grep -q 'HOME/.local/bin' "${PERSISTENT_HOME}/.bashrc" 2>/dev/null; then
-    echo '' >> "${PERSISTENT_HOME}/.bashrc"
-    echo '# User local binaries' >> "${PERSISTENT_HOME}/.bashrc"
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "${PERSISTENT_HOME}/.bashrc"
+mkdir -p "/home/developer/.local/bin"
+if ! grep -q 'HOME/.local/bin' "/home/developer/.bashrc" 2>/dev/null; then
+    echo '' >> "/home/developer/.bashrc"
+    echo '# User local binaries' >> "/home/developer/.bashrc"
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "/home/developer/.bashrc"
 fi
 
-echo "Home directory persistent at ${PERSISTENT_HOME}"
+echo "/home directory persistent at ${PERSISTENT_HOME}"
 
 # =============================================================================
 # Persistent Flatpak Directory

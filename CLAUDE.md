@@ -145,17 +145,19 @@ docker compose exec m2-desktop-worker supervisorctl restart guacamole
 
 ```
 /m2_home/                          # Volume mount (ALL variants)
-├── home/                          # Entire /home/developer (symlinked)
-│   ├── .config/                   # All user configs
-│   ├── .local/bin/                # User-installed binaries (in PATH)
-│   ├── .claude/                   # Claude Code CLI config
-│   ├── Desktop/                   # Desktop icons
-│   └── ...                        # Everything else in home folder
+├── home/                          # Entire /home directory (symlinked)
+│   ├── developer/                 # Developer user home
+│   │   ├── .config/               # All user configs
+│   │   ├── .local/bin/            # User-installed binaries (in PATH)
+│   │   ├── .claude/               # Claude Code CLI config
+│   │   ├── Desktop/               # Desktop icons
+│   │   └── ...                    # Everything else
+│   └── linuxbrew/                 # Homebrew installation
 ├── flatpak/                       # Symlinked from ~/.local/share/flatpak
 └── openclaw/                      # OpenClaw config
 ```
 
-**Note:** The entire home directory persists across container rebuilds. Any tools you install (Claude Code, pip packages, npm globals, etc.) will survive rebuilds.
+**Note:** The entire `/home` directory persists across container rebuilds. Any tools you install (Claude Code, Homebrew packages, pip packages, npm globals, etc.) will survive rebuilds.
 
 ## Multi-User Sessions (Guacamole Only)
 
